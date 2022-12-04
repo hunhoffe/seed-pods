@@ -71,20 +71,20 @@ def isRoleLabel(label: str) -> bool:
 def isClassLabel(label: str) -> bool:
     return label.startswith(ClassLabel)
 
-def getNetworkNameFromLabel(label: str) -> str:
+def getNetworkNumberFromLabel(label: str) -> str:
     return label.split('.')[5]
 
 def isNetworkAddressLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "address"
 
-def isNetworkInterfaceLabel(label: str) -> bool:
+def isNetworkNameLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "name"
 
-def isExchange(interface: str) -> bool:
-    return interface.startswith('ix')
+def isExchange(networkName: str) -> bool:
+    return networkName.startswith('ix')
 
-def isServiceNetwork(interface: str) -> bool:
-    return interface == "000_svc"
+def isServiceNetwork(networkName: str) -> bool:
+    return networkName == "000_svc"
 
 class ServiceTemplate(object):
     __template: str
@@ -107,8 +107,8 @@ class ServiceTemplate(object):
     def addLabel(self, label_name: str, label_value: str) -> None:
         self.__template['metadata']['labels'][label_name] = label_value
 
-    def setNetworkMaskLabel(self, networkName: str, networkMask: str) -> None:
-        self.__template['metadata']['labels'][NetworkMaskLabelTemplate.format(networkName)] = networkMask
+    def setNetworkMaskLabel(self, networkNumber: str, networkMask: str) -> None:
+        self.__template['metadata']['labels'][NetworkMaskLabelTemplate.format(networkNumber)] = networkMask
 
     def setNetworkAnnotations(self, networkAnnotations: str) -> None:
         self.__template['metadata']['annotations']['k8s.v1.cni.cncf.io/networks'] = networkAnnotations
@@ -122,14 +122,14 @@ class NetworkAnnotations(object):
     def __init__(self) -> None:
         self.__annotations = {}
 
-    def addNetworkAnnotation(self, name:str, interface: str, namespace: str) -> None:
+    def addNetworkAnnotation(self, networkNumber:str, networkName: str, namespace: str) -> None:
         annotation = {}
-        annotation['interface'] = interface
+        annotation['interface'] = networkName
         annotation['namespace'] = namespace
-        self.__annotations[name] = annotation
+        self.__annotations[networkNumber] = annotation
 
-    def addIpAddress(self, name: str, ipAddress: str) -> None:
-        annotation = self.__annotations[name]
+    def addIpAddress(self, networkNumber: str, ipAddress: str) -> None:
+        annotation = self.__annotations[networkNumber]
         if 'ips' in annotation:
             annotation['ips'].append(ipAddress)
         else:
@@ -141,7 +141,7 @@ class NetworkAnnotations(object):
             for ip in annotation['ips']:
                 annotation['default-route'].append('.'.join(ip.split('/')[0].split('.')[:-1]) + '.254')
 
-    def setNetworkAttachmentDefinitionNames(self, asn: str) -> None:
+    def setNetworkNames(self, asn: str) -> None:
         for _, annotation in self.__annotations.items():
             interface = annotation['interface']
             if isExchange(interface):
@@ -197,14 +197,14 @@ class Kubernetes(object):
                 for label in service['labels']:
                     label_value = service['labels'][label]
                     if isNetworkLabel(label):
-                        network_name = getNetworkNameFromLabel(label)
-                        if isNetworkInterfaceLabel(label):
-                            network_annotations.addNetworkAnnotation(network_name, label_value, self.__namespace)
+                        network_number = getNetworkNumberFromLabel(label)
+                        if isNetworkNameLabel(label):
+                            network_annotations.addNetworkAnnotation(network_number, label_value, self.__namespace)
                         elif isNetworkAddressLabel(label):
-                            network_annotations.addIpAddress(network_name, label_value)
+                            network_annotations.addIpAddress(network_number, label_value)
                             mask = label_value.split('/')[1]
                             label_value = label_value.split('/')[0]
-                            template.setNetworkMaskLabel(network_name, mask)
+                            template.setNetworkMaskLabel(network_number, mask)
                     elif isRoleLabel(label):
                         label_value = getCompatibleName(label_value)
                         role = label_value
@@ -212,7 +212,7 @@ class Kubernetes(object):
                         label_value = getAlphaNumeric(label_value)
                     template.addLabel(label, label_value)
 
-                network_annotations.setNetworkAttachmentDefinitionNames(service['labels'][AsnLabel])
+                network_annotations.setNetworkNames(service['labels'][AsnLabel])
                 if role not in ['Router', 'Router']:
                     network_annotations.setDefaultRoutes()
                 template.setNetworkAnnotations(network_annotations.getAnnotations())
