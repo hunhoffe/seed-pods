@@ -2,7 +2,7 @@ import re
 import yaml
 import json
 import os.path
-from typing import Dict, List
+from typing import Dict
 
 KubernetesCompilerFileTemplates: Dict[str, str] = {}
 
@@ -60,44 +60,57 @@ RoleLabel = "org.seedsecuritylabs.seedemu.meta.role"
 ClassLabel = "org.seedsecuritylabs.seedemu.meta.class"
 AsnLabel = "org.seedsecuritylabs.seedemu.meta.asn"
 
+
 def getCompatibleName(name: str) -> str:
-        return name.replace('_', '-').replace('.','-').replace(' ', '-')
+    return name.replace('_', '-').replace('.', '-').replace(' ', '-')
+
 
 def getYamlFileName(name: str) -> str:
-        return getCompatibleName(name) + '.yml'
+    return getCompatibleName(name) + '.yml'
+
 
 def getAlphaNumeric(string: str) -> str:
-        return re.sub(r'\W+', '', string)
+    return re.sub(r'\W+', '', string)
+
 
 def isNetworkLabel(label: str) -> bool:
     return label.startswith(NetworkLabelPrefix)
 
+
 def isRoleLabel(label: str) -> bool:
     return label == RoleLabel
+
 
 def isClassLabel(label: str) -> bool:
     return label.startswith(ClassLabel)
 
+
 def getNetworkNumberFromLabel(label: str) -> str:
     return label.split('.')[5]
+
 
 def isNetworkAddressLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "address"
 
+
 def isNetworkNameLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "name"
+
 
 def isExchange(networkName: str) -> bool:
     return networkName.startswith('ix')
 
+
 def isServiceNetwork(networkName: str) -> bool:
     return networkName == "000_svc"
+
 
 class ServiceTemplate(object):
     __template: str
 
     def __init__(self) -> None:
-        self.__template = yaml.load(KubernetesCompilerFileTemplates['service'], Loader=yaml.FullLoader)
+        self.__template = yaml.load(
+            KubernetesCompilerFileTemplates['service'], Loader=yaml.FullLoader)
 
     def setObjectName(self, name: str) -> None:
         self.__template['metadata']['name'] = name
@@ -115,7 +128,8 @@ class ServiceTemplate(object):
         self.__template['metadata']['labels'][label_name] = label_value
 
     def setNetworkMaskLabel(self, networkNumber: str, networkMask: str) -> None:
-        self.__template['metadata']['labels'][NetworkMaskLabelTemplate.format(networkNumber)] = networkMask
+        self.__template['metadata']['labels'][NetworkMaskLabelTemplate.format(
+            networkNumber)] = networkMask
 
     def setNetworkAnnotations(self, networkAnnotations: str) -> None:
         self.__template['metadata']['annotations']['k8s.v1.cni.cncf.io/networks'] = networkAnnotations
@@ -123,13 +137,14 @@ class ServiceTemplate(object):
     def getYamlFile(self) -> str:
         return yaml.dump(self.__template, sort_keys=False)
 
+
 class NetworkAnnotations(object):
     __annotations: Dict[str, Dict[str, str]]
 
     def __init__(self) -> None:
         self.__annotations = {}
 
-    def addNetworkAnnotation(self, networkNumber:str, networkName: str, namespace: str) -> None:
+    def addNetworkAnnotation(self, networkNumber: str, networkName: str, namespace: str) -> None:
         annotation = {}
         annotation['interface'] = networkName
         annotation['namespace'] = namespace
@@ -146,20 +161,24 @@ class NetworkAnnotations(object):
         for _, annotation in self.__annotations.items():
             annotation['default-route'] = []
             for ip in annotation['ips']:
-                annotation['default-route'].append('.'.join(ip.split('/')[0].split('.')[:-1]) + '.254')
+                annotation['default-route'].append(
+                    '.'.join(ip.split('/')[0].split('.')[:-1]) + '.254')
 
     def setNetworkNames(self, asn: str) -> None:
         for _, annotation in self.__annotations.items():
             interface = annotation['interface']
             if isExchange(interface):
-                annotation['name'] = 'net-ix-{}'.format(getCompatibleName(interface))
+                annotation['name'] = 'net-ix-{}'.format(
+                    getCompatibleName(interface))
             elif isServiceNetwork(interface):
                 annotation['name'] = getCompatibleName(interface)
             else:
-                annotation['name'] = 'net-{}-{}'.format(asn, getCompatibleName(interface))
+                annotation['name'] = 'net-{}-{}'.format(
+                    asn, getCompatibleName(interface))
 
     def getAnnotations(self) -> str:
         return json.dumps(list(self.__annotations.values()), separators=(',', ':'))
+
 
 class Kubernetes(object):
 
@@ -178,61 +197,71 @@ class Kubernetes(object):
         self.__project_name = os.path.basename(dockerFilesPath)
         try:
             with open(os.path.join(self.__docker_files_path, 'docker-compose.yml'), 'r') as file:
-                self.__docker_compose_file = yaml.load(file, Loader=yaml.FullLoader)
+                self.__docker_compose_file = yaml.load(
+                    file, Loader=yaml.FullLoader)
         except Exception as e:
             raise Exception('Error opening the docker compose file: {}')
 
     def parseNetworks(self) -> None:
         for network in self.__docker_compose_file['networks']:
             self.__files[getYamlFileName(network)] = KubernetesCompilerFileTemplates['network'].format(
-                networkName = getCompatibleName(network), 
-                namespace = self.__namespace, 
-                interface = self.__interface)
+                networkName=getCompatibleName(network),
+                namespace=self.__namespace,
+                interface=self.__interface)
 
     def parseServices(self) -> None:
         for service_name in self.__docker_compose_file['services']:
-            if service_name != BaseImageName:
-                service = self.__docker_compose_file['services'][service_name]
-                template = ServiceTemplate()
-                template.setObjectName(getCompatibleName(service_name))
-                template.setNamespace(self.__namespace)
-                template.setImageName('{}-{}'.format(self.__project_name, service_name))
-                template.setContainerName(getCompatibleName(service['container_name']))
-                
-                role = ''
-                network_annotations = NetworkAnnotations()
-                for label in service['labels']:
-                    label_value = service['labels'][label]
-                    if isNetworkLabel(label):
-                        network_number = getNetworkNumberFromLabel(label)
-                        if isNetworkNameLabel(label):
-                            network_annotations.addNetworkAnnotation(network_number, label_value, self.__namespace)
-                        elif isNetworkAddressLabel(label):
-                            network_annotations.addIpAddress(network_number, label_value)
-                            mask = label_value.split('/')[1]
-                            label_value = label_value.split('/')[0]
-                            template.setNetworkMaskLabel(network_number, mask)
-                    elif isRoleLabel(label):
-                        label_value = getCompatibleName(label_value)
-                        role = label_value
-                    elif isClassLabel(label):
-                        label_value = getAlphaNumeric(label_value)
-                    template.addLabel(label, label_value)
+            if service_name == BaseImageName:
+                continue
+            service = self.__docker_compose_file['services'][service_name]
+            template = ServiceTemplate()
+            template.setObjectName(getCompatibleName(service_name))
+            template.setNamespace(self.__namespace)
+            template.setImageName(
+                '{}-{}'.format(self.__project_name, service_name))
+            template.setContainerName(
+                getCompatibleName(service['container_name']))
 
-                network_annotations.setNetworkNames(service['labels'][AsnLabel])
-                if role not in ['Router', 'Router']:
-                    network_annotations.setDefaultRoutes()
-                template.setNetworkAnnotations(network_annotations.getAnnotations())
-                self.__files[getYamlFileName(service_name)] = template.getYamlFile()
+            role = ''
+            network_annotations = NetworkAnnotations()
+            for label in service['labels']:
+                label_value = service['labels'][label]
+                if isNetworkLabel(label):
+                    network_number = getNetworkNumberFromLabel(label)
+                    if isNetworkNameLabel(label):
+                        network_annotations.addNetworkAnnotation(
+                            network_number, label_value, self.__namespace)
+                    elif isNetworkAddressLabel(label):
+                        network_annotations.addIpAddress(
+                            network_number, label_value)
+                        mask = label_value.split('/')[1]
+                        label_value = label_value.split('/')[0]
+                        template.setNetworkMaskLabel(network_number, mask)
+                elif isRoleLabel(label):
+                    label_value = getCompatibleName(label_value)
+                    role = label_value
+                elif isClassLabel(label):
+                    label_value = getAlphaNumeric(label_value)
+                template.addLabel(label, label_value)
+
+            network_annotations.setNetworkNames(
+                service['labels'][AsnLabel])
+            if role not in ['Router', 'Router']:
+                network_annotations.setDefaultRoutes()
+            template.setNetworkAnnotations(
+                network_annotations.getAnnotations())
+            self.__files[getYamlFileName(
+                service_name)] = template.getYamlFile()
 
     def compile(self) -> None:
         self.parseNetworks()
         self.parseServices()
         output_directory = os.path.join(self.__docker_files_path, 'k8s')
         template_directory = os.path.join(output_directory, 'templates')
-        os.makedirs(template_directory, exist_ok = True)
+        os.makedirs(template_directory, exist_ok=True)
         for filename, data in self.__files.items():
             with open(os.path.join(template_directory, filename), 'w') as file:
                 file.write(data)
         with open(os.path.join(output_directory, 'Chart.yaml'), 'w') as file:
-            file.write(KubernetesCompilerFileTemplates['helmchart'].format(name=self.__project_name))
+            file.write(KubernetesCompilerFileTemplates['helmchart'].format(
+                name=self.__project_name))
