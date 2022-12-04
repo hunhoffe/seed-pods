@@ -62,6 +62,24 @@ def getYamlFileName(name: str) -> str:
 def getAlphaNumeric(string: str) -> str:
         return re.sub(r'\W+', '', string)
 
+def isNetworkLabel(label: str) -> bool:
+    return label.startswith(NetworkLabelPrefix)
+
+def isRoleLabel(label: str) -> bool:
+    return label == RoleLabel
+
+def isClassLabel(label: str) -> bool:
+    return label.startswith(ClassLabel)
+
+def getNetworkNameFromLabel(label: str) -> str:
+    return label.split('.')[5]
+
+def isNetworkAddressLabel(label: str) -> bool:
+    return isNetworkLabel(label) and label.split('.')[6] == "address"
+
+def isNetworkNameLabel(label: str) -> bool:
+    return isNetworkLabel(label) and label.split('.')[6] == "name"
+
 class ServiceTemplate(object):
     __template: str
 
@@ -152,20 +170,20 @@ class Kubernetes(object):
                 is_router = False
                 for label in service['labels']:
                     label_value = service['labels'][label]
-                    if label.startswith(NetworkLabelPrefix):
-                        network_number = label.split('.')[5]
-                        field = label.split('.')[6]
-                        if field == 'name':
-                            networks[network_number] = [label_value, None]
-                        elif field == 'address':
-                            networks[network_number][1] = label_value
+                    if isNetworkLabel(label):
+                        network_name = getNetworkNameFromLabel(label)
+                        if isNetworkNameLabel(label):
+                            networks[network_name] = [label_value, None]
+                        elif isNetworkAddressLabel(label):
+                            networks[network_name][1] = label_value
+                            mask = label_value.split('/')[1]
                             label_value = label_value.split('/')[0]
-                            template.setNetworkMaskLabel(network_number, '24')
-                    elif label == RoleLabel:
+                            template.setNetworkMaskLabel(network_name, mask)
+                    elif isRoleLabel(label):
                         label_value = getCompatibleName(label_value)
                         if label_value.startswith('Route'):
                             is_router = True
-                    elif label.startswith(ClassLabel):
+                    elif isClassLabel(label):
                         label_value = getAlphaNumeric(label_value)
                     template.addLabel(label, label_value)
 
