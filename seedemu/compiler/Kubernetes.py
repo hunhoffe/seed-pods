@@ -90,9 +90,11 @@ class Kubernetes(object):
             net['namespace'] = namespace
             net['interface'] = network[0]
             if network[0].startswith('ix'):
-                net['name'] = 'net-ix-{}'.format(network[0])
+                net['name'] = 'net-ix-{}'.format(self.getKubernetesName(network[0]))
+            elif network[0].startswith('000'):
+                net['name'] = self.getKubernetesName(network[0])
             else:
-                net['name'] = 'net-{}-{}'.format(asn, network[0])
+                net['name'] = 'net-{}-{}'.format(asn, self.getKubernetesName(network[0]))
             net['ips'] = [network[1]]
             if not isRouter:
                 net['default-route'] = ['.'.join(network[1].split('/')[0].split('.')[:-1]) + '.254']
@@ -144,10 +146,3 @@ class Kubernetes(object):
         for filename, data in self.__files.items():
             with open(os.path.join(template_directory, filename), 'w') as file:
                 file.write(data)
-
-
-if __name__ == "__main__":
-    obj = Kubernetes('/Users/rajeevrmenon/work/cuboulder/fall_2022/csci_7000_005/project/seed-pods/examples/B00-mini-internet/output', interface='enp4s0f0np0')
-    obj.compile()
-
-
