@@ -46,6 +46,13 @@ spec:
     imagePullPolicy: Never
 """
 
+KubernetesCompilerFileTemplates['helmchart'] = """\
+name: {name}
+description: SEED-generated helm chart for internet emulation
+version: 0.0.1
+apiVersion: v1
+"""
+
 BaseImageName = "cfee3a34e9c68ac1d16035a81a926786"
 NetworkLabelPrefix = "org.seedsecuritylabs.seedemu.meta.net"
 NetworkMaskLabelTemplate = "org.seedsecuritylabs.seedemu.meta.net.{}.mask"
@@ -227,3 +234,5 @@ class Kubernetes(object):
         for filename, data in self.__files.items():
             with open(os.path.join(template_directory, filename), 'w') as file:
                 file.write(data)
+        with open(os.path.join(output_directory, 'Chart.yaml'), 'w') as file:
+            file.write(KubernetesCompilerFileTemplates['helmchart'].format(name=self.__project_name))
