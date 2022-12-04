@@ -24,7 +24,7 @@ spec:
     }}'
 """
 
-KubernetesCompilerFileTemplates['host'] = """\
+KubernetesCompilerFileTemplates['service'] = """\
 apiVersion: v1
 kind: Pod
 metadata:
@@ -46,6 +46,22 @@ spec:
     imagePullPolicy: Never
 """
 
+BaseImageName = "cfee3a34e9c68ac1d16035a81a926786"
+NetworkLabelPrefix = "org.seedsecuritylabs.seedemu.meta.net"
+NetworkMaskLabelTemplate = "org.seedsecuritylabs.seedemu.meta.net.{}.mask"
+RoleLabel = "org.seedsecuritylabs.seedemu.meta.role"
+ClassLabel = "org.seedsecuritylabs.seedemu.meta.class"
+AsnLabel = "org.seedsecuritylabs.seedemu.meta.asn"
+
+def getCompatibleName(name: str) -> str:
+        return name.replace('_', '-').replace('.','-').replace(' ', '-')
+
+def getYamlFileName(name: str) -> str:
+        return getCompatibleName(name) + '.yml'
+
+def getAlphaNumeric(string: str) -> str:
+        return re.sub(r'\W+', '', string)
+
 class Kubernetes(object):
 
     __docker_files_path: str
@@ -55,7 +71,7 @@ class Kubernetes(object):
     __files: Dict[str, str]
     __project_name: str
 
-    def __init__(self, dockerFilesPath: str = 'output', namespace: str = 'seed', interface: str = 'eth0') -> None:
+    def __init__(self, dockerFilesPath: str = './output', namespace: str = 'seed', interface: str = 'eth0') -> None:
         self.__docker_files_path = dockerFilesPath
         self.__namespace = namespace
         self.__interface = interface
@@ -67,19 +83,10 @@ class Kubernetes(object):
         except Exception as e:
             raise Exception('Error opening the docker compose file: {}')
 
-    def getKubernetesName(self, name: str) -> str:
-        return name.replace('_', '-').replace('.','-').replace(' ', '-')
-
-    def getYamlFileName(self, name: str) -> str:
-        return self.getKubernetesName(name) + '.yml'
-
-    def getAlphaNumeric(self, string: str) -> str:
-        return re.sub(r'\W+', '', string)
-
     def parseNetworks(self) -> None:
         for network in self.__docker_compose_file['networks']:
-            self.__files[self.getYamlFileName(network)] = KubernetesCompilerFileTemplates['network'].format(
-                networkName = self.getKubernetesName(network), 
+            self.__files[getYamlFileName(network)] = KubernetesCompilerFileTemplates['network'].format(
+                networkName = getCompatibleName(network), 
                 namespace = self.__namespace, 
                 interface = self.__interface)
 
@@ -90,11 +97,11 @@ class Kubernetes(object):
             net['namespace'] = namespace
             net['interface'] = network[0]
             if network[0].startswith('ix'):
-                net['name'] = 'net-ix-{}'.format(self.getKubernetesName(network[0]))
+                net['name'] = 'net-ix-{}'.format(getCompatibleName(network[0]))
             elif network[0].startswith('000'):
-                net['name'] = self.getKubernetesName(network[0])
+                net['name'] = getCompatibleName(network[0])
             else:
-                net['name'] = 'net-{}-{}'.format(asn, self.getKubernetesName(network[0]))
+                net['name'] = 'net-{}-{}'.format(asn, getCompatibleName(network[0]))
             net['ips'] = [network[1]]
             if not isRouter:
                 net['default-route'] = ['.'.join(network[1].split('/')[0].split('.')[:-1]) + '.254']
@@ -103,20 +110,20 @@ class Kubernetes(object):
 
     def parseServices(self) -> None:
         for service_name in self.__docker_compose_file['services']:
-            if service_name != 'cfee3a34e9c68ac1d16035a81a926786':
+            if service_name != BaseImageName:
                 service = self.__docker_compose_file['services'][service_name]
-                template = yaml.load(KubernetesCompilerFileTemplates['host'], Loader=yaml.FullLoader)
-                template['metadata']['name'] = self.getKubernetesName(service_name)
+                template = yaml.load(KubernetesCompilerFileTemplates['service'], Loader=yaml.FullLoader)
+                template['metadata']['name'] = getCompatibleName(service_name)
                 template['metadata']['namespace'] = self.__namespace
                 template['spec']['containers'][0]['image'] = '{}-{}'.format(self.__project_name, service_name)
-                template['spec']['containers'][0]['name'] = self.getKubernetesName(service['container_name'])
+                template['spec']['containers'][0]['name'] = getCompatibleName(service['container_name'])
                 
                 networks = {}
                 role = ''
                 is_router = False
                 for label in service['labels']:
                     label_value = service['labels'][label]
-                    if label.startswith('org.seedsecuritylabs.seedemu.meta.net'):
+                    if label.startswith(NetworkLabelPrefix):
                         network_number = label.split('.')[5]
                         field = label.split('.')[6]
                         if field == 'name':
@@ -124,18 +131,18 @@ class Kubernetes(object):
                         elif field == 'address':
                             networks[network_number][1] = label_value
                             label_value = label_value.split('/')[0]
-                            template['metadata']['labels']['org.seedsecuritylabs.seedemu.meta.net.{}.mask'.format(network_number)] = '24'
-                    elif label == 'org.seedsecuritylabs.seedemu.meta.role':
-                        label_value = self.getKubernetesName(label_value)
+                            template['metadata']['labels'][NetworkMaskLabelTemplate.format(network_number)] = '24'
+                    elif label == RoleLabel:
+                        label_value = getCompatibleName(label_value)
                         if label_value.startswith('Route'):
                             is_router = True
-                    elif label.startswith('org.seedsecuritylabs.seedemu.meta.class'):
-                        label_value = self.getAlphaNumeric(label_value)
+                    elif label.startswith(ClassLabel):
+                        label_value = getAlphaNumeric(label_value)
                     template['metadata']['labels'][label] = label_value
 
                 template['metadata']['annotations']['k8s.v1.cni.cncf.io/networks'] = self.getNetworkAnnotations(networks, self.__namespace, 
-                    service['labels']['org.seedsecuritylabs.seedemu.meta.asn'], is_router)
-                self.__files[self.getYamlFileName(service_name)] = yaml.dump(template, sort_keys=False)
+                    service['labels'][AsnLabel], is_router)
+                self.__files[getYamlFileName(service_name)] = yaml.dump(template, sort_keys=False)
 
     def compile(self) -> None:
         self.parseNetworks()
