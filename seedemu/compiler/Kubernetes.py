@@ -77,8 +77,14 @@ def getNetworkNameFromLabel(label: str) -> str:
 def isNetworkAddressLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "address"
 
-def isNetworkNameLabel(label: str) -> bool:
+def isNetworkInterfaceLabel(label: str) -> bool:
     return isNetworkLabel(label) and label.split('.')[6] == "name"
+
+def isExchange(interface: str) -> bool:
+    return interface.startswith('ix')
+
+def isServiceNetwork(interface: str) -> bool:
+    return interface == "000_svc"
 
 class ServiceTemplate(object):
     __template: str
@@ -110,6 +116,44 @@ class ServiceTemplate(object):
     def getYamlFile(self) -> str:
         return yaml.dump(self.__template, sort_keys=False)
 
+class NetworkAnnotations(object):
+    __annotations: Dict[str, Dict[str, str]]
+
+    def __init__(self) -> None:
+        self.__annotations = {}
+
+    def addNetworkAnnotation(self, name:str, interface: str, namespace: str) -> None:
+        annotation = {}
+        annotation['interface'] = interface
+        annotation['namespace'] = namespace
+        self.__annotations[name] = annotation
+
+    def addIpAddress(self, name: str, ipAddress: str) -> None:
+        annotation = self.__annotations[name]
+        if 'ips' in annotation:
+            annotation['ips'].append(ipAddress)
+        else:
+            annotation['ips'] = [ipAddress]
+
+    def setDefaultRoutes(self) -> None:
+        for _, annotation in self.__annotations.items():
+            annotation['default-route'] = []
+            for ip in annotation['ips']:
+                annotation['default-route'].append('.'.join(ip.split('/')[0].split('.')[:-1]) + '.254')
+
+    def setNetworkAttachmentDefinitionNames(self, asn: str) -> None:
+        for _, annotation in self.__annotations.items():
+            interface = annotation['interface']
+            if isExchange(interface):
+                annotation['name'] = 'net-ix-{}'.format(getCompatibleName(interface))
+            elif isServiceNetwork(interface):
+                annotation['name'] = getCompatibleName(interface)
+            else:
+                annotation['name'] = 'net-{}-{}'.format(asn, getCompatibleName(interface))
+
+    def getAnnotations(self) -> str:
+        return json.dumps(list(self.__annotations.values()), separators=(',', ':'))
+
 class Kubernetes(object):
 
     __docker_files_path: str
@@ -138,24 +182,6 @@ class Kubernetes(object):
                 namespace = self.__namespace, 
                 interface = self.__interface)
 
-    def getNetworkAnnotations(self, networks: Dict[str, List[str]], namespace: str, asn: str, isRouter: bool = False) -> str:
-        annotations = []
-        for _, network in networks.items():
-            net = {}
-            net['namespace'] = namespace
-            net['interface'] = network[0]
-            if network[0].startswith('ix'):
-                net['name'] = 'net-ix-{}'.format(getCompatibleName(network[0]))
-            elif network[0].startswith('000'):
-                net['name'] = getCompatibleName(network[0])
-            else:
-                net['name'] = 'net-{}-{}'.format(asn, getCompatibleName(network[0]))
-            net['ips'] = [network[1]]
-            if not isRouter:
-                net['default-route'] = ['.'.join(network[1].split('/')[0].split('.')[:-1]) + '.254']
-            annotations.append(net)
-        return json.dumps(annotations, separators=(',', ':'))
-
     def parseServices(self) -> None:
         for service_name in self.__docker_compose_file['services']:
             if service_name != BaseImageName:
@@ -166,28 +192,30 @@ class Kubernetes(object):
                 template.setImageName('{}-{}'.format(self.__project_name, service_name))
                 template.setContainerName(getCompatibleName(service['container_name']))
                 
-                networks = {}
-                is_router = False
+                role = ''
+                network_annotations = NetworkAnnotations()
                 for label in service['labels']:
                     label_value = service['labels'][label]
                     if isNetworkLabel(label):
                         network_name = getNetworkNameFromLabel(label)
-                        if isNetworkNameLabel(label):
-                            networks[network_name] = [label_value, None]
+                        if isNetworkInterfaceLabel(label):
+                            network_annotations.addNetworkAnnotation(network_name, label_value, self.__namespace)
                         elif isNetworkAddressLabel(label):
-                            networks[network_name][1] = label_value
+                            network_annotations.addIpAddress(network_name, label_value)
                             mask = label_value.split('/')[1]
                             label_value = label_value.split('/')[0]
                             template.setNetworkMaskLabel(network_name, mask)
                     elif isRoleLabel(label):
                         label_value = getCompatibleName(label_value)
-                        if label_value.startswith('Route'):
-                            is_router = True
+                        role = label_value
                     elif isClassLabel(label):
                         label_value = getAlphaNumeric(label_value)
                     template.addLabel(label, label_value)
 
-                template.setNetworkAnnotations(self.getNetworkAnnotations(networks, self.__namespace, service['labels'][AsnLabel], is_router))
+                network_annotations.setNetworkAttachmentDefinitionNames(service['labels'][AsnLabel])
+                if role not in ['Router', 'Router']:
+                    network_annotations.setDefaultRoutes()
+                template.setNetworkAnnotations(network_annotations.getAnnotations())
                 self.__files[getYamlFileName(service_name)] = template.getYamlFile()
 
     def compile(self) -> None:
