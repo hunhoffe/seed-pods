@@ -246,7 +246,7 @@ class Kubernetes(object):
 
             network_annotations.setNetworkNames(
                 service['labels'][AsnLabel])
-            if role not in ['Router', 'Router']:
+            if role not in ['Router', 'Route-Server']:
                 network_annotations.setDefaultRoutes()
             template.setNetworkAnnotations(
                 network_annotations.getAnnotations())
