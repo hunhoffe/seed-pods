@@ -218,7 +218,7 @@ class Kubernetes(object):
             template.setObjectName(getCompatibleName(service_name))
             template.setNamespace(self.__namespace)
             template.setImageName(
-                '{}-{}'.format(self.__project_name, service_name))
+                '{}_{}'.format(self.__project_name, service_name))
             template.setContainerName(
                 getCompatibleName(service['container_name']))
 
