@@ -177,7 +177,7 @@ class Evpn(Layer):
         router.setFile('/frr_start', EvpnFileTemplates['frr_start_script'])
         router.appendStartCommand('chmod +x /frr_start')
         router.appendStartCommand('/frr_start')
-        router.addSoftware('frr')
+        router.addSoftware(NodeSoftware('frr'))
 
     def __configureProviderRouter(self, router: Router, peers: List[Router] = []):
         self._log('configuring common properties for provider router as{}/{}'.format(router.getAsn(), router.getName()))

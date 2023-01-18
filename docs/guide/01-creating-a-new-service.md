@@ -17,7 +17,7 @@ The first step of creating a new service is to create a new class implementing t
 
 ### `Server:install`
 
-All server must implement this method. This call installs a service onto a physical node. One parameter, the reference to the physical node, will be passed in, and the method does not need to return anything. Generally, one will make changes to the physical node here. (e.g., call `node.addSoftware('some_software')`). For details on API on the `Node` class, refer to the API documentation. 
+All server must implement this method. This call installs a service onto a physical node. One parameter, the reference to the physical node, will be passed in, and the method does not need to return anything. Generally, one will make changes to the physical node here. (e.g., call `node.addSoftware(NodeSoftware('some_software'))`). For details on API on the `Node` class, refer to the API documentation.
 
 Other methods to configure the service should also be implemented in this class. For example, the `WebServer` class implements `WebServer::setPort` to allow changing the listening port number of the nginx web server. However, if a setting will be affecting all instances of servers, the method to change such a setting should be implemented directly in the `Service` class instead. 
 

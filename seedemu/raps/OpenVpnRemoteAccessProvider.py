@@ -191,8 +191,8 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
     def configureRemoteAccess(self, emulator: Emulator, netObject: Network, brNode: Node, brNet: Network):
         self._log('setting up OpenVPN remote access for {} in AS{}...'.format(netObject.getName(), brNode.getAsn()))
 
-        brNode.addSoftware('openvpn')
-        brNode.addSoftware('bridge-utils')
+        brNode.addSoftware(NodeSoftware('openvpn'))
+        brNode.addSoftware(NodeSoftware('bridge-utils'))
 
         addrstart = addrend = netObject.assign(NodeRole.Host)
         for i in repeat(None, self.__naddrs - 1): addrend = netObject.assign(NodeRole.Host)

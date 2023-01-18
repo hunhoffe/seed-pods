@@ -34,9 +34,9 @@ class BgpLookingGlassServer(Server):
         """
 
         # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debain
-        node.addSoftware('golang')
-        node.addSoftware('git')
-        node.addSoftware('make')
+        node.addSoftware(NodeSoftware('golang'))
+        node.addSoftware(NodeSoftware('git'))
+        node.addSoftware(NodeSoftware('make'))
         node.addBuildCommand('git clone https://github.com/xddxdd/bird-lg-go /lg')
         node.addBuildCommand('curl -Lo /bin/go-bindata https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-linux-amd64')
         node.addBuildCommand('chmod +x /bin/go-bindata')

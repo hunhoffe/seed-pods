@@ -185,7 +185,7 @@ class Mpls(Layer, Graphable):
         self._log('Setting up LDP and OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
 
         node.setPrivileged(True)
-        node.addSoftware('frr')
+        node.addSoftware(NodeSoftware('frr'))
 
         ospf_ifaces = ''
         ldp_ifaces = ''

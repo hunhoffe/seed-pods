@@ -1,6 +1,6 @@
 from __future__ import annotations
 from seedemu.core.Emulator import Emulator
-from seedemu.core import Node, Network, Compiler
+from seedemu.core import Node, NodeSoftware, Network, Compiler
 from seedemu.core.enums import NodeRole, NetworkType
 from typing import Dict, Generator, List, Set, Tuple
 from hashlib import md5
@@ -208,7 +208,7 @@ class DockerImage(object):
     __local: bool
     __dirName: str
 
-    def __init__(self, name: str, software: List[str], local: bool = False, dirName: str = None) -> None:
+    def __init__(self, name: str, software: List[NodeSoftware], local: bool = False, dirName: str = None) -> None:
         """!
         @brief create a new docker image.
 
@@ -239,7 +239,7 @@ class DockerImage(object):
         """
         return self.__name
 
-    def getSoftware(self) -> Set[str]:
+    def getSoftware(self) -> Set[NodeSoftware]:
         """!
         @brief get set of software installed on this image.
         
@@ -428,8 +428,8 @@ class Docker(Compiler):
 
         registry = emulator.getRegistry()
         
-        # { [imageName]: { [softName]: [nodeRef] } }
-        softGroups: Dict[str, Dict[str, List[Node]]] = {}
+        # { [imageName]: { [softwareRef]: [nodeRef] } }
+        softGroups: Dict[str, Dict[NodeSoftware, List[Node]]] = {}
 
         # { [imageName]: useCount }
         groupIter: Dict[str, int] = {}
@@ -454,7 +454,7 @@ class Docker(Compiler):
             group = softGroups[imgName]
 
             for soft in node.getSoftware():
-                if soft not in group:
+                if soft.usePackageManager() and soft not in group:
                     group[soft] = []
                 group[soft].append(node)
 
@@ -831,12 +831,26 @@ class Docker(Compiler):
         (image, soft) = self._selectImageFor(node)
 
         if not node.hasAttribute('__soft_install_tiers') and len(soft) > 0:
-            dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(soft)))
+            packageSoft = [s.getName() for s in soft if s.usePackageManager()]
+            dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(packageSoft)))
+
+            scriptSoft = [s for s in soft if not s.usePackageManager()]
+            for s in scriptSoft:
+                dockerfile += self._addFile(f"install_{s.getName()}.sh", s.getInstallScript())
+                dockerfile += f'RUN chmod +x /install_d{s.getName()}.sh\n'
+                dockerfile += f'RUN ./install_{s.getName()}.sh'
 
         if node.hasAttribute('__soft_install_tiers'):
             softLists: List[List[str]] = node.getAttribute('__soft_install_tiers')
             for softList in softLists:
-                dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(softList)))
+                packageSoft = [s.getName() for s in softList if s.usePackageManager()]
+                dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(packageSoft)))
+
+                scriptSoft = [s for s in softList if not s.usePackageManager()]
+                for s in scriptSoft:
+                    dockerfile += self._addFile(f"install_{s.getName()}.sh", s.getInstallScript())
+                    dockerfile += f'RUN chmod +x /install_{s.getName()}.sh\n'
+                    dockerfile += f'RUN ./install_{s.getName()}.sh'
 
         dockerfile += 'RUN curl -L https://grml.org/zsh/zshrc > /root/.zshrc\n'
         dockerfile = 'FROM {}\n'.format(md5(image.getName().encode('utf-8')).hexdigest()) + dockerfile

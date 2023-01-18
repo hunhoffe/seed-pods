@@ -176,7 +176,8 @@ class DomainRegistrarServer(Server):
         """!
         @brief Install the service.
         """
-        node.addSoftware('nginx-light php7.4-fpm') # Install nginx and php
+        node.addSoftware(NodeSoftware('nginx-light')) # Install nginx
+        node.addSoftware(NodeSoftware('php7.4-fpm')) # Install php
         node.setFile('/var/www/html/index.php', DomainRegistrarServerFileTemplates['web_app_file']) #index page for domain register service
         node.setFile('/var/www/html/domain.php', DomainRegistrarServerFileTemplates['web_app_file2']) # domain names register page.
         node.setFile('/etc/nginx/sites-available/default', DomainRegistrarServerFileTemplates['nginx_site'].format(port = self.__port)) # setup nginx

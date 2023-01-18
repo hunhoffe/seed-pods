@@ -33,7 +33,9 @@ emu.load('../../B02-mini-internet-with-dns/base_with_dns.bin')
 We will use a sendmail software to implement SMTP server and a dovecot software to implement IMAP.
 
 ```python
-web.addSoftware('sendmail dovecot-imapd dovecot-pop3d')
+web.addSoftware(NodeSoftware('sendmail'))
+web.addSoftware(NodeSoftware('dovecot-imapd'))
+web.addSoftware(NodeSoftware('dovecot-pop3d'))
 web.appendStartCommand('hostname seedmail.edu')
 web.setFile('/etc/mail/sendmail.mc', MailServerFileTemplates['sendmail_mc'])
 web.appendStartCommand('m4 /etc/mail/sendmail.mc > /etc/mail/sendmail.cf')

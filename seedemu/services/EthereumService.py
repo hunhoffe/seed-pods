@@ -494,7 +494,7 @@ class EthereumServer(Server):
         node.setFile('/tmp/eth-password', '\n'.join(account_passwords))
             
 
-        node.addSoftware('software-properties-common')
+        node.addSoftware(NodeSoftware('software-properties-common'))
         # tap the eth repo
         node.addBuildCommand('add-apt-repository ppa:ethereum/ethereum')
 

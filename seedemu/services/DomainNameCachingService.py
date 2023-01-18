@@ -93,7 +93,7 @@ class DomainNameCachingServer(Server, Configurable):
         self.__emulator = emulator
 
     def install(self, node: Node):
-        node.addSoftware('bind9')
+        node.addSoftware(NodeSoftware('bind9'))
         node.setFile('/etc/bind/named.conf.options', DomainNameCachingServiceFileTemplates['named_options'])
         node.setFile('/etc/bind/named.conf.local','')
         if len(self.__root_servers) > 0:

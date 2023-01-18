@@ -403,7 +403,8 @@ class TorServer(Server):
         for dir in tor.getDirAuthority():
             download_commands += TorServerFileTemplates["downloader"].format(da_addr=dir)
 
-        node.addSoftware("git python3")
+        node.addSoftware(NodeSoftware("git"))
+        node.addSoftware(NodeSoftware("python3"))
         node.addBuildCommand(BUILD_COMMANDS)
 
         node.setFile("/etc/tor/torrc", TorServerFileTemplates["torrc"])

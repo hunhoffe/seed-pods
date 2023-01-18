@@ -79,7 +79,7 @@ ebgp.addRsPeer(100, 152)
 emu.getVirtualNode('web152').setDisplayName('Web server in AS152')
 emu.getVirtualNode('web151').setFile('/var/www/html/hello.txt', 'hello from web151')
 
-emu.getVirtualNode('web150').addSoftware('cowsay')
+emu.getVirtualNode('web150').addSoftware(NodeSoftware('cowsay'))
 emu.getVirtualNode('web150').appendStartCommand('export PATH=$PATH:/usr/games')
 emu.getVirtualNode('web150').appendStartCommand('echo "Adding start command and installing new software is also possible." | cowsay')
 

@@ -79,7 +79,7 @@ class DHCPServer(Server):
         @brief Install the service
         """
 
-        node.addSoftware('isc-dhcp-server')
+        node.addSoftware(NodeSoftware('isc-dhcp-server'))
 
         ifaces = self.__node.getInterfaces()
         assert len(ifaces) > 0, 'node {} has no interfaces'.format(node.getName())

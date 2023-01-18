@@ -2,6 +2,7 @@ from __future__ import annotations
 from .Printable import Printable
 from .Network import Network
 from .enums import NodeRole
+from .NodeSoftware import NodeSoftware
 from .Registry import Registrable
 from .Emulator import Emulator
 from .Configurable import Configurable
@@ -11,8 +12,6 @@ from ipaddress import IPv4Address, IPv4Interface
 from typing import List, Dict, Set, Tuple
 from string import ascii_letters
 from random import choice
-
-DEFAULT_SOFTWARE: List[str] = ['zsh', 'curl', 'nano', 'vim-nox', 'mtr-tiny', 'iproute2', 'iputils-ping', 'tcpdump', 'termshark', 'dnsutils', 'jq', 'ipcalc', 'netcat']
 
 class File(Printable):
     """!
@@ -212,7 +211,7 @@ class Node(Printable, Registrable, Configurable, Vertex):
     __interfaces: List[Interface]
     __files: Dict[str, File]
     __imported_files: Dict[str, str]
-    __softwares: Set[str]
+    __softwares: Set[NodeSoftware]
     __build_commands: List[str]
     __start_commands: List[Tuple[str, bool]]
     __ports: List[Tuple[int, int, str]]
@@ -226,6 +225,22 @@ class Node(Printable, Registrable, Configurable, Vertex):
     __persistent_storages: List[str] 
 
     __name_servers: List[str]
+
+    __DEFAULT_SOFTWARE: List[NodeSoftware] = [
+        NodeSoftware('zsh'),
+        NodeSoftware('curl'),
+        NodeSoftware('nano'),
+        NodeSoftware('vim-nox'),
+        NodeSoftware('mtr-tiny'),
+        NodeSoftware('iproute2'),
+        NodeSoftware('iputils-ping'),
+        NodeSoftware('tcpdump'),
+        NodeSoftware('termshark'),
+        NodeSoftware('dnsutils'),
+        NodeSoftware('jq'),
+        NodeSoftware('ipcalc'),
+        NodeSoftware('netcat')
+    ]
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None):
         """!
@@ -260,7 +275,7 @@ class Node(Printable, Registrable, Configurable, Vertex):
         self.__shared_folders = {}
         self.__persistent_storages = []
 
-        for soft in DEFAULT_SOFTWARE:
+        for soft in self.__DEFAULT_SOFTWARE:
             self.__softwares.add(soft)
 
         self.__name_servers = []
@@ -415,7 +430,7 @@ class Node(Printable, Registrable, Configurable, Vertex):
         elif address == "dhcp": 
             _addr = None
             self.__name_servers = []
-            self.addSoftware('isc-dhcp-client')
+            self.addSoftware(NodeSoftware('isc-dhcp-client'))
             self.setFile('dhclient.sh', '''\
             #!/bin/bash  
             ip addr flush {iface}
@@ -641,26 +656,24 @@ class Node(Printable, Registrable, Configurable, Vertex):
 
         return self
 
-    def addSoftware(self, name: str) -> Node:
+    def addSoftware(self, soft: NodeSoftware) -> Node:
         """!
         @brief Add new software to node.
 
-        @param name software package name.
+        @param soft the software to add to the node.
 
         Use this to add software to the node. For example, if using the "docker"
-        compiler, this will be added as an "apt-get install" line in Dockerfile.
+        compiler, this will be added as an "apt-get install" line in Dockerfile if the
+        software object has no install script. If it has the install script, the install
+        script will be run as part of docker image creation for the node.
 
         @returns self, for chaining API calls.
         """
-        if ' ' in name:
-            for soft in name.split(' '):
-                self.__softwares.add(soft)
-        else: 
-            self.__softwares.add(name)
+        self.__softwares.add(soft)
 
         return self
 
-    def getSoftware(self) -> Set[str]:
+    def getSoftware(self) -> Set[NodeSoftware]:
         """!
         @brief Get set of software.
 
@@ -992,7 +1005,7 @@ class RealWorldRouter(Router):
         self.__realworld_routes = []
         self.__sealed = False
         self.__hide_hops = hideHops
-        self.addSoftware('iptables')
+        self.addSoftware(NodeSoftware('iptables'))
 
     def addRealWorldRoute(self, prefix: str) -> RealWorldRouter:
         """!

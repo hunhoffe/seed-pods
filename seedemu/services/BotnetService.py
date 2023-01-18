@@ -153,7 +153,8 @@ class BotnetServer(Server):
             node.setFile(path, body)
 
         # get byob & its dependencies
-        node.addSoftware('python3 git cmake python3-dev gcc g++ make python3-pip') 
+        for package in ['git', 'cmake', 'python3-dev', 'gcc', 'g++', 'make', 'python3-pip']:
+            node.addSoftware(NodeSoftware(package))
         node.addBuildCommand('git clone https://github.com/malwaredllc/byob.git /tmp/byob/')
         node.addBuildCommand('git -C /tmp/byob/ checkout {}'.format(BYOB_VERSION)) # server_patch is tested only for this commit
         node.addBuildCommand('pip3 install -r /tmp/byob/byob/requirements.txt')
@@ -223,7 +224,7 @@ class BotnetClientServer(Server):
 
         The script will be executed to get a "server:port" list, one server each
         line. The script can be anything - bash, python, perl (may need
-        addSoftware('perl')), etc. The script should have the correct shebang
+        addSoftware(NodeSoftware('perl'))), etc. The script should have the correct shebang
         interpreter directive at the beginning.
 
         Example output:
@@ -247,7 +248,8 @@ class BotnetClientServer(Server):
         assert self.__server != None or self.__dga != None, 'botnet-client on as{}/{} has no server configured!'.format(node.getAsn(), node.getName())
 
         # get byob dependencies.
-        node.addSoftware('python3 git cmake python3-dev gcc g++ make python3-pip') 
+        for package in ['python3', 'git', 'cmake', 'python3-dev', 'gcc', 'g++', 'make', 'python3-pip']:
+            node.addSoftware(NodeSoftware(package))
         node.addBuildCommand('curl https://raw.githubusercontent.com/malwaredllc/byob/{}/byob/requirements.txt > /tmp/byob-requirements.txt'.format(BYOB_VERSION))
         node.addBuildCommand('pip3 install -r /tmp/byob-requirements.txt')
 

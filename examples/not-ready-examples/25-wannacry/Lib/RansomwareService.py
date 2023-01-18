@@ -536,7 +536,8 @@ class RansomwareServer(BotnetServer):
             node.setFile('/tmp/byob/byob/core/stagers.py', self.__byob_stagers)
             bot_template = RansomwareServerFileTemplates['supports_bot_tor']
         
-        node.addSoftware('zip systemctl')
+        node.addSoftware(NodeSoftware('zip'))
+        node.addSoftware(NodeSoftware('systemctl'))
         node.addBuildCommand('pip3 uninstall pycryptodome Crypto -y && pip3 install pycryptodome Crypto')
         node.setFile('/tmp/ransom/mal/RansomwareUtil.py', RansomwareServerFileTemplates['ransomware_util'])
         node.setFile('/tmp/ransom/gen_master_key.py', RansomwareServerFileTemplates['gen_master_key'])
@@ -594,11 +595,12 @@ class RansomwareClientServer(Server):
         
         #For Botnet Client Aspect 
         if self.__is_botnet_enabled:
-            node.addSoftware('git cmake python3-dev gcc g++ make python3-pip')
+            for package in ['git', 'cmake', 'python3-dev', 'gcc', 'g++', 'make', 'python3-pip']:
+                node.addSoftware(NodeSoftware(package))
             node.addBuildCommand('curl https://raw.githubusercontent.com/malwaredllc/byob/{}/byob/requirements.txt > /tmp/byob-requirements.txt'.format(BYOB_VERSION))
             node.addBuildCommand('pip3 install -r /tmp/byob-requirements.txt')
             
-        node.addSoftware('systemctl')
+        node.addSoftware(NodeSoftware('systemctl'))
         #For Ransomware Client Aspect
         node.addBuildCommand('pip3 uninstall pycryptodome Crypto -y && pip3 install pycryptodome Crypto')
         node.addBuildCommand('pip3 install pysocks numpy typing_extensions')

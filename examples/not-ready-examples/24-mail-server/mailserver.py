@@ -277,7 +277,9 @@ web.updateNetwork('net0', address='10.162.0.75')
 web.setDisplayName('seedmail_server')
 
 # 3) Install the needed software : sendmail, dovecot
-web.addSoftware('sendmail dovecot-imapd dovecot-pop3d')
+web.addSoftware(NodeSoftware('sendmail'))
+web.addSoftware(NodeSoftware('dovecot-imapd'))
+web.addSoftware(NodeSoftware('dovecot-pop3d'))
 
 # 4) Set configuration files to run sendmail(for smpt) and dovecote(for imap)
 web.appendStartCommand('hostname seedmail.edu')
@@ -315,7 +317,7 @@ asn_150 = base.getAutonomousSystem(150)
 web_150 = asn_150.getHost('webservice_0')
 web_150.updateNetwork('net0', address='10.150.0.75')
 # We are using mutt as a mail client at this point. 
-web_150.addSoftware('mutt')
+web_150.addSoftware(NodeSoftware('mutt'))
 web_150.setFile('/root/.muttrc', MailServerFileTemplates['mutt_rc'])
 web_150.setDisplayName('mail_client')
 ##############################################################################################################
