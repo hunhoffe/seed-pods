@@ -454,9 +454,11 @@ class Docker(Compiler):
             group = softGroups[imgName]
 
             for soft in node.getSoftware():
-                if soft.usePackageManager() and soft not in group:
-                    group[soft] = []
-                group[soft].append(node)
+                # Grouping only matters when using package manager, so ignore other software items.
+                if soft.usePackageManager():
+                    if soft not in group:
+                        group[soft] = []
+                    group[soft].append(node)
 
         for (key, val) in softGroups.items():
             maxIter = groupIter[key]
@@ -855,8 +857,6 @@ class Docker(Compiler):
         dockerfile += 'RUN curl -L https://grml.org/zsh/zshrc > /root/.zshrc\n'
         dockerfile = 'FROM {}\n'.format(md5(image.getName().encode('utf-8')).hexdigest()) + dockerfile
         self._used_images.add(image.getName())
-
-        for cmd in node.getBuildCommands(): dockerfile += 'RUN {}\n'.format(cmd)
 
         start_commands = ''
 

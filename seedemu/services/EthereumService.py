@@ -114,6 +114,20 @@ GenesisFileTemplates['POW'] = '''\
 GenesisFileTemplates['POA_extra_data'] = '''\
 0x0000000000000000000000000000000000000000000000000000000000000000{signer_addresses}0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'''
 
+BOOTNODE_INSTALL = '''\
+#!/bin/bash
+
+add-apt-repository ppa:ethereum/ethereum
+apt-get update && apt-get install --yes bootnode
+'''
+
+GETH_BOOTNODE_INSTALL = '''\
+#!/bin/bash
+
+add-apt-repository ppa:ethereum/ethereum
+apt-get update && apt-get install --yes bootnode geth
+'''
+
 GethCommandTemplates['base'] = '''\
 nice -n 19 geth --datadir {datadir} --identity="NODE_{node_id}" --networkid=10 --syncmode {syncmode} --snapshot={snapshot} --verbosity=2 --allow-insecure-unlock --port 30303 '''
 
@@ -492,19 +506,16 @@ class EthereumServer(Server):
             account_passwords.append(account.getPassword())
 
         node.setFile('/tmp/eth-password', '\n'.join(account_passwords))
-            
 
         node.addSoftware(NodeSoftware('software-properties-common'))
-        # tap the eth repo
-        node.addBuildCommand('add-apt-repository ppa:ethereum/ethereum')
 
-        # install geth and bootnode
+        # install geth or load from custom binary path
         if self.__custom_geth_binary_path : 
-            node.addBuildCommand('apt-get update && apt-get install --yes bootnode')
+            node.addSoftware(NodeSoftware('bootnode', BOOTNODE_INSTALL))
             node.importFile("../../"+self.__custom_geth_binary_path, '/usr/bin/geth')
             node.appendStartCommand("chmod +x /usr/bin/geth")
         else:
-            node.addBuildCommand('apt-get update && apt-get install --yes geth bootnode')
+            node.addSoftware(NodeSoftware('geth', GETH_BOOTNODE_INSTALL))
 
         # genesis
         node.appendStartCommand('[ ! -e "/root/.ethereum/geth/nodekey" ] && geth --datadir {} init /tmp/eth-genesis.json'.format(self.__data_dir))

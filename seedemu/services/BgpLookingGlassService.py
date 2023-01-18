@@ -5,6 +5,20 @@ from typing import Set, Dict
 
 BIRDCTRL='/run/bird/bird.ctl'
 
+INSTALL_GO_BINDATA_SCRIPT = '''\
+#!/bin/bash
+
+curl -Lo /bin/go-bindata https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-linux-amd64
+chmod +x /bin/go-bindata
+'''
+
+INSTALL_LOOKING_GLASS_SCRIPT = '''\
+#!/bin/bash
+
+git clone https://github.com/xddxdd/bird-lg-go /lg
+make -C /lg
+'''
+
 class BgpLookingGlassServer(Server):
     """!
     @brief the BGP looking glass server. A looking glass server has two parts,
@@ -37,10 +51,8 @@ class BgpLookingGlassServer(Server):
         node.addSoftware(NodeSoftware('golang'))
         node.addSoftware(NodeSoftware('git'))
         node.addSoftware(NodeSoftware('make'))
-        node.addBuildCommand('git clone https://github.com/xddxdd/bird-lg-go /lg')
-        node.addBuildCommand('curl -Lo /bin/go-bindata https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-linux-amd64')
-        node.addBuildCommand('chmod +x /bin/go-bindata')
-        node.addBuildCommand('make -C /lg')
+        node.addSoftware(NodeSoftware('go-bindata', INSTALL_GO_BINDATA_SCRIPT))
+        node.addSoftware(NodeSoftware('looking-glass', INSTALL_LOOKING_GLASS_SCRIPT))
 
     def setFrontendPort(self, port: int) -> BgpLookingGlassServer:
         """!

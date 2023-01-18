@@ -250,25 +250,28 @@ TorServerFileTemplates["downloader"] = """
     echo $FINGERPRINT >> /etc/tor/torrc
 """
 
-BUILD_COMMANDS = """build_temps="build-essential automake" && \
-    build_deps="libssl-dev zlib1g-dev libevent-dev ca-certificates\
-        dh-apparmor libseccomp-dev dh-systemd \
-        git" && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install $build_deps $build_temps \
-        init-system-helpers \
-        pwgen && \
-    mkdir /src && \
-    cd /src && \
-    git clone https://git.torproject.org/tor.git && \
-    cd tor && \
-    git checkout ${TOR_VER} && \
-    ./autogen.sh && \
-    ./configure --disable-asciidoc && \
-    make && \
-    make install && \
-    apt-get -y purge --auto-remove $build_temps && \
-    apt-get clean && rm -r /var/lib/apt/lists/* && \
-    rm -rf /src/*
+# TODO(hunhoffe): it does not appear as though TOR_VER is defined??
+TOR_INSTALL_SCRIPT = """\
+#!/bin/bash
+
+build_temps="build-essential automake"
+build_deps="libssl-dev zlib1g-dev libevent-dev ca-certificates dh-apparmor libseccomp-dev dh-systemd git"
+
+DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install $build_deps $build_temps init-system-helpers pwgen
+
+mkdir /src
+cd /src
+git clone https://git.torproject.org/tor.git\
+cd tor
+git checkout ${TOR_VER}
+./autogen.sh
+./configure --disable-asciidoc
+make
+make install
+
+apt-get -y purge --auto-remove $build_temps
+apt-get clean && rm -r /var/lib/apt/lists/*
+ rm -rf /src/*
 """
 
 
@@ -405,7 +408,7 @@ class TorServer(Server):
 
         node.addSoftware(NodeSoftware("git"))
         node.addSoftware(NodeSoftware("python3"))
-        node.addBuildCommand(BUILD_COMMANDS)
+        node.addSoftware(NodeSoftware("tor", TOR_INSTALL_SCRIPT))
 
         node.setFile("/etc/tor/torrc", TorServerFileTemplates["torrc"])
         node.setFile("/etc/tor/torrc.da", TorServerFileTemplates["torrc.da"])

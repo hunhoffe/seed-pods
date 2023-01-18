@@ -681,29 +681,6 @@ class Node(Printable, Registrable, Configurable, Vertex):
         """
         return self.__softwares
 
-    def addBuildCommand(self, cmd: str) -> Node:
-        """!
-        @brief Add new command to build step.
-
-        Use this to add build steps to the node. For example, if using the
-        "docker" compiler, this will be added as a "RUN" line in Dockerfile.
-
-        @param cmd command to add.
-
-        @returns self, for chaining API calls.
-        """
-        self.__build_commands.append(cmd)
-
-        return self
-    
-    def getBuildCommands(self) -> List[str]:
-        """!
-        @brief Get build commands.
-
-        @returns list of commands.
-        """
-        return self.__build_commands
-
     def insertStartCommand(self, index: int, cmd: str, fork: bool = False) -> Node:
         """!
         @brief Add new command to start script.
@@ -819,7 +796,6 @@ class Node(Printable, Registrable, Configurable, Vertex):
         for (h, n, p) in node.getPorts(): self.addPort(h, n, p)
         for p in node.getPersistentStorages(): self.addPersistentStorage(p)
         for (c, f) in node.getStartCommands(): self.appendStartCommand(c, f)
-        for c in node.getBuildCommands(): self.addBuildCommand(c)
         for s in node.getSoftware(): self.addSoftware(s)
 
         for file in node.getFiles():
