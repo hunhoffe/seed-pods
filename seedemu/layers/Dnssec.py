@@ -139,5 +139,14 @@ class Dnssec(Layer):
             out += '{}\n'.format(zonename)
 
         return out
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return set()
             
 

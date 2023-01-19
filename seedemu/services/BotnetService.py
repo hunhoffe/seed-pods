@@ -2,8 +2,8 @@
 # encoding: utf-8
 # __author__ = 'Demon'
 from __future__ import annotations
-from seedemu.core import Node, Service, Server, Emulator
-from typing import Dict
+from seedemu.core import Node, NodeSoftware, Service, Server, Emulator
+from typing import Dict, Set
 
 BYOB_VERSION='3924dd6aea6d0421397cdf35f692933b340bfccf'
 
@@ -99,6 +99,17 @@ index 5c5958a..ea1c9d4 100644
      if sys.version_info[0] > 2:
 '''
 
+BOTNET_DEFAULT_SOFTWARE = {
+    NodeSoftware('git'),
+    NodeSoftware('cmake'),
+    NodeSoftware('python3-dev'),
+    NodeSoftware('gcc'),
+    NodeSoftware('g++'),
+    NodeSoftware('make'),
+    NodeSoftware('python3-pip'),
+    NodeSoftware('byob', BotnetServerFileTemplates['byob_install'])
+}
+
 class BotnetServer(Server):
     """!
     @brief The BotnetServer class.
@@ -161,9 +172,8 @@ class BotnetServer(Server):
             node.setFile(path, body)
 
         # get byob & its dependencies
-        for package in ['git', 'cmake', 'python3-dev', 'gcc', 'g++', 'make', 'python3-pip']:
-            node.addSoftware(NodeSoftware(package))
-        node.addSoftware(NodeSoftware('byob', BotnetServerFileTemplates['byob_install']))
+        for soft in BOTNET_DEFAULT_SOFTWARE:
+            node.addSoftware(soft)
 
         # patch byob - removes external request for getting IP location, which won't work if "real" internet is not connected.
         node.setFile('/tmp/byob.patch', BotnetServerFileTemplates['server_patch'])
@@ -183,6 +193,15 @@ class BotnetServer(Server):
         # set attributes for client to find us
         node.setAttribute('botnet_addr', address)
         node.setAttribute('botnet_port', self.__port + 1)
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BOTNET_DEFAULT_SOFTWARE
 
 class BotnetClientServer(Server):
     """!
@@ -230,7 +249,7 @@ class BotnetClientServer(Server):
 
         The script will be executed to get a "server:port" list, one server each
         line. The script can be anything - bash, python, perl (may need
-        addSoftware(NodeSoftware('perl'))), etc. The script should have the correct shebang
+        addSoftware(NodeSoftware('perl')), self), etc. The script should have the correct shebang
         interpreter directive at the beginning.
 
         Example output:
@@ -253,10 +272,10 @@ class BotnetClientServer(Server):
     def install(self, node: Node):
         assert self.__server != None or self.__dga != None, 'botnet-client on as{}/{} has no server configured!'.format(node.getAsn(), node.getName())
 
+
         # get byob dependencies.
-        for package in ['python3', 'git', 'cmake', 'python3-dev', 'gcc', 'g++', 'make', 'python3-pip']:
-            node.addSoftware(NodeSoftware(package))
-        node.addSoftware(NodeSoftware('byob', BotnetServerFileTemplates['byob_install']))
+        for package in BOTNET_DEFAULT_SOFTWARE:
+            node.addSoftware(package)
 
         fork = False
 
@@ -279,6 +298,15 @@ class BotnetClientServer(Server):
         node.appendStartCommand('chmod +x /tmp/byob_client_dropper_runner')
         node.appendStartCommand('/tmp/byob_client_dropper_runner "{}" "{}"'.format(addr, port), fork)
 
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BOTNET_DEFAULT_SOFTWARE
+
 class BotnetService(Service):
     """!
     @brief Botnet C2 server service.
@@ -293,6 +321,15 @@ class BotnetService(Service):
 
     def _createServer(self) -> Server:
         return BotnetServer()
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BotnetServer.softwareDeps
 
 class BotnetClientService(Service):
     """!
@@ -317,3 +354,12 @@ class BotnetClientService(Service):
 
     def _createServer(self) -> Server:
         return BotnetClientServer()
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BotnetClientServer.softwareDeps

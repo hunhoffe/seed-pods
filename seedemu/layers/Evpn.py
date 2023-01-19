@@ -1,7 +1,7 @@
 from .Ospf import Ospf
 from .Ibgp import Ibgp
 from .Routing import Router
-from seedemu.core import Layer, Emulator, ScopedRegistry, Registry
+from seedemu.core import Layer, Emulator, ScopedRegistry, Registry, NodeSoftware
 from seedemu.core.enums import NetworkType, NodeRole
 from typing import Dict, Tuple, List, Set
 
@@ -178,6 +178,15 @@ class Evpn(Layer):
         router.appendStartCommand('chmod +x /frr_start')
         router.appendStartCommand('/frr_start')
         router.addSoftware(NodeSoftware('frr'))
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('frr')}
 
     def __configureProviderRouter(self, router: Router, peers: List[Router] = []):
         self._log('configuring common properties for provider router as{}/{}'.format(router.getAsn(), router.getName()))

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from seedemu.core import Node, Service, Server, Emulator, ScopedRegistry
+from seedemu.core import Node, NodeSoftware, Service, Server, Emulator, ScopedRegistry
 from seedemu.layers.Routing import Router
 from typing import Set, Dict
 
@@ -31,6 +31,15 @@ class BgpLookingGlassServer(Server):
     __frontend_port: int
     __proxy_port: int
 
+    __DEFAULT_SOFTWARE = {
+        # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debain
+        NodeSoftware('golang'),
+        NodeSoftware('git'),
+        NodeSoftware('make'),
+        NodeSoftware('go-bindata', INSTALL_GO_BINDATA_SCRIPT),
+        NodeSoftware('looking-glass', INSTALL_LOOKING_GLASS_SCRIPT)
+    }
+
     def __init__(self):
         """!
         @brief create a new class BgpLookingGlassServer.
@@ -46,13 +55,17 @@ class BgpLookingGlassServer(Server):
 
         @param node node.
         """
+        for soft in self.__DEFAULT_SOFTWARE:
+            node.addSoftware(soft)
 
-        # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debain
-        node.addSoftware(NodeSoftware('golang'))
-        node.addSoftware(NodeSoftware('git'))
-        node.addSoftware(NodeSoftware('make'))
-        node.addSoftware(NodeSoftware('go-bindata', INSTALL_GO_BINDATA_SCRIPT))
-        node.addSoftware(NodeSoftware('looking-glass', INSTALL_LOOKING_GLASS_SCRIPT))
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return cls.__DEFAULT_SOFTWARE
 
     def setFrontendPort(self, port: int) -> BgpLookingGlassServer:
         """!
@@ -184,3 +197,12 @@ class BgpLookingGlassService(Service):
     def configure(self, emulator: Emulator):
         self.__emulator = emulator
         return super().configure(emulator)
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BgpLookingGlassServer.softwareDeps

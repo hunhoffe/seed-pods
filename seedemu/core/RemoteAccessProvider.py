@@ -1,8 +1,9 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from .Loggable import Loggable
+from .NodeSoftware import NodeSoftwareInstaller
 
-class RemoteAccessProvider(Loggable, metaclass=ABCMeta):
+class RemoteAccessProvider(Loggable, NodeSoftwareInstaller, metaclass=ABCMeta):
     """!
     @brief Implements logic for provide remote access to emulated network.
     """

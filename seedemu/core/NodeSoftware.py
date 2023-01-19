@@ -1,3 +1,6 @@
+from abc import ABCMeta, abstractmethod
+from typing import Set
+
 class NodeSoftware(object):
     """!
     @brief The NodeSoftware class
@@ -53,3 +56,20 @@ class NodeSoftware(object):
 
     def __hash__(self):
         return hash(self.__name + str(self.__installScript))
+
+class NodeSoftwareInstaller(metaclass=ABCMeta):
+    """!
+    @brief SoftwareInstaller class.
+
+    Implement this abstract class for bookkeeping for software installed on nodes.
+    """
+
+    @property
+    @abstractmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        raise NotImplementedError("softwareDeps not implemented.")

@@ -2,7 +2,7 @@ from __future__ import annotations
 from .Ospf import Ospf
 from .Ibgp import Ibgp
 from .Routing import Router
-from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer
+from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer, NodeSoftware
 from seedemu.core.enums import NetworkType, NodeRole
 from typing import List, Tuple, Dict, Set
 
@@ -211,6 +211,15 @@ class Mpls(Layer, Graphable):
         node.setFile('/mpls_ifaces.txt', '\n'.join(mpls_iface_list))
         node.appendStartCommand('chmod +x /frr_start')
         node.appendStartCommand('/frr_start')
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('frr')}
 
     def __setUpIbgpMesh(self, nodes: List[Router]):
         """!

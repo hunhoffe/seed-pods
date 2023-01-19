@@ -6,12 +6,13 @@ from .Loggable import Loggable
 from .Registry import Registrable
 from .Emulator import Emulator
 from .Configurable import Configurable
+from .NodeSoftware import NodeSoftwareInstaller
 from .Merger import Mergeable
 
 from typing import Set, Dict, Tuple
 
 
-class Layer(Printable, Registrable, Configurable, Mergeable, Loggable, metaclass=ABCMeta):
+class Layer(Printable, Registrable, Configurable, Mergeable, Loggable, NodeSoftwareInstaller, metaclass=ABCMeta):
     """!
     @brief The layer interface.
     """

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from seedemu.core import Node, Printable, Emulator, Service, Server
+from seedemu.core import Node, NodeSoftware, Printable, Emulator, Service, Server
 from seedemu.core.enums import NetworkType
 from typing import List, Dict, Tuple, Set
 from re import sub
@@ -414,6 +414,15 @@ class DomainNameServer(Server):
 
         node.appendStartCommand('chown -R bind:bind /etc/bind/zones')
         node.appendStartCommand('service named start')
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('bind9')}
     
 class DomainNameService(Service):
     """!
@@ -563,6 +572,15 @@ class DomainNameService(Service):
             self.__autoNameServer(self.__rootZone)
 
         super().render(emulator)
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return DomainNameServer.softwareDeps
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

@@ -1,5 +1,5 @@
 from seedemu.core import ScopedRegistry, Node, NodeSoftware, Interface, Network, Emulator, Layer, Router, RealWorldRouter
-from typing import List, Dict
+from typing import List, Dict, Set
 from ipaddress import IPv4Network
 
 RoutingFileTemplates: Dict[str, str] = {}
@@ -81,6 +81,15 @@ class Routing(Layer):
         @brief Install bird on node, and handle the bug. TODO(hunhoffe): What bug is this?
         """
         node.addSoftware(NodeSoftware("bird", RoutingFileTemplates["bird_install"]))
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware("bird", RoutingFileTemplates["bird_install"])}
 
     def configure(self, emulator: Emulator):
         reg = emulator.getRegistry()

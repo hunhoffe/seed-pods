@@ -2,7 +2,7 @@ from __future__ import annotations
 from .Printable import Printable
 from .Network import Network
 from .enums import NodeRole
-from .NodeSoftware import NodeSoftware
+from .NodeSoftware import NodeSoftware, NodeSoftwareInstaller
 from .Registry import Registrable
 from .Emulator import Emulator
 from .Configurable import Configurable
@@ -195,7 +195,7 @@ class Interface(Printable):
 
         return out
 
-class Node(Printable, Registrable, Configurable, Vertex):
+class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
     """!
     @brief Node base class.
 
@@ -226,7 +226,7 @@ class Node(Printable, Registrable, Configurable, Vertex):
 
     __name_servers: List[str]
 
-    __DEFAULT_SOFTWARE: List[NodeSoftware] = [
+    __DEFAULT_SOFTWARE: Set[NodeSoftware] = {
         NodeSoftware('zsh'),
         NodeSoftware('curl'),
         NodeSoftware('nano'),
@@ -240,7 +240,9 @@ class Node(Printable, Registrable, Configurable, Vertex):
         NodeSoftware('jq'),
         NodeSoftware('ipcalc'),
         NodeSoftware('netcat')
-    ]
+    }
+
+    __SOFTWARE_DEPENDENCIES = __DEFAULT_SOFTWARE | {NodeSoftware('isc-dhcp-client')}
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None):
         """!
@@ -276,7 +278,7 @@ class Node(Printable, Registrable, Configurable, Vertex):
         self.__persistent_storages = []
 
         for soft in self.__DEFAULT_SOFTWARE:
-            self.__softwares.add(soft)
+            self.addSoftware(soft)
 
         self.__name_servers = []
 
@@ -339,7 +341,16 @@ class Node(Printable, Registrable, Configurable, Vertex):
         self.insertStartCommand(0,': > /etc/resolv.conf')
         for idx, s in enumerate(self.__name_servers, start=1):
             self.insertStartCommand(idx, 'echo "nameserver {}" >> /etc/resolv.conf'.format(s))
- 
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return cls.__SOFTWARE_DEPENDENCIES
+
     def setNameServers(self, servers: List[str]) -> Node:
         """!
         @brief set recursive name servers to use on this node. Overwrites
@@ -1034,6 +1045,14 @@ class RealWorldRouter(Router):
         self.addTablePipe('t_rw', 't_bgp', exportFilter = 'filter { bgp_large_community.add(LOCAL_COMM); bgp_local_pref = 40; accept; }')
         # self.addTablePipe('t_rw', 't_ospf') # TODO
 
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return super().softwareDeps + {NodeSoftware('iptables')}
 
     def print(self, indent: int) -> str:
         out = super(RealWorldRouter, self).print(indent)

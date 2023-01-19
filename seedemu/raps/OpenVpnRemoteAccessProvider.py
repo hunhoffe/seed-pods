@@ -1,6 +1,6 @@
-from seedemu.core import RemoteAccessProvider, Emulator, Network, Node
+from seedemu.core import RemoteAccessProvider, Emulator, Network, Node, NodeSoftware
 from seedemu.core.enums import NodeRole
-from typing import Dict
+from typing import Dict, Set
 from itertools import repeat
 
 OpenVpnRapFileTemplates: Dict[str, str] = {}
@@ -220,3 +220,12 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
         brNode.addPort(self.__cur_port, 1194, 'udp')
 
         self.__cur_port += 1
+ 
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component may install on a node.
+
+        @returns set of software this component may install on a node.
+        """
+        return set({NodeSoftware('openvpn'), NodeSoftware('bridge-utils')})

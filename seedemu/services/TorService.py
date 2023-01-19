@@ -3,7 +3,7 @@
 # __author__ = 'Demon'
 
 from __future__ import annotations
-from seedemu.core import Node, Emulator, Service, Server
+from seedemu.core import Node, NodeSoftware, Emulator, Service, Server
 from typing import List, Dict, Set
 from enum import Enum
 
@@ -429,6 +429,15 @@ class TorServer(Server):
         node.appendStartCommand("tor-entrypoint")
         node.appendStartCommand("tor -f /etc/tor/torrc")
 
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return set([NodeSoftware("git"), NodeSoftware("python3"), NodeSoftware("tor", TOR_INSTALL_SCRIPT)])
+
 class TorService(Service):
     """!
     @brief The Tor network service.
@@ -485,3 +494,12 @@ class TorService(Service):
 
     def _createServer(self) -> Server:
         return TorServer()
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return TorServer.softwareDeps

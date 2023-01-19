@@ -4,11 +4,12 @@ from .Layer import Layer
 from .Node import Node
 from .Printable import Printable
 from .Emulator import Emulator
+from .NodeSoftware import NodeSoftwareInstaller
 from .enums import NodeRole
 from .Binding import Binding
 from typing import Dict, List, Set, Tuple
 
-class Server(Printable, metaclass=ABCMeta):
+class Server(Printable, NodeSoftwareInstaller, metaclass=ABCMeta):
     """!
     @brief Server class.
 

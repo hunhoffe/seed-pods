@@ -12,6 +12,15 @@ class CymruIpOriginServer(Server):
     def install(self, node: Node):
         pass
 
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return set()
+
 class CymruIpOriginService(Service):
     """!
     @brief Cymru's IP info service.
@@ -135,4 +144,13 @@ class CymruIpOriginService(Service):
             zone.addRecord(record)
 
         return super().configure(emulator)
+
+    @property
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return CymruIpOriginServer.softwareDeps
 

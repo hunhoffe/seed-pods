@@ -57,7 +57,7 @@ host0.addSoftware(NodeSoftware('telnetd')).addSoftware(NodeSoftware('telnet'))
 
 # Run an additional command inside the container 
 # The command creates a new account inside the host (also sets its password)
-host0.addStartCommand('useradd -m -s /bin/bash seed && echo "seed:dees" | chpasswd')
+host0.appendStartCommand('useradd -m -s /bin/bash seed && echo "seed:dees" | chpasswd')
 
 ###############################################################################
 # Create and set up the stub AS (AS-152)
