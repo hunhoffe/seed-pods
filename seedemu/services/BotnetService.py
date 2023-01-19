@@ -176,12 +176,6 @@ class BotnetServer(Server):
         # set attributes for client to find us
         node.setAttribute('botnet_addr', address)
         node.setAttribute('botnet_port', self.__port + 1)
-         
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'BotnetServer'
-
-        return out
 
 class BotnetClientServer(Server):
     """!
@@ -278,12 +272,6 @@ class BotnetClientServer(Server):
         node.appendStartCommand('chmod +x /tmp/byob_client_dropper_runner')
         node.appendStartCommand('/tmp/byob_client_dropper_runner "{}" "{}"'.format(addr, port), fork)
 
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'BotnetClient'
-
-        return out
-
 class BotnetService(Service):
     """!
     @brief Botnet C2 server service.
@@ -298,13 +286,6 @@ class BotnetService(Service):
 
     def _createServer(self) -> Server:
         return BotnetServer()
-
-    def getName(self) -> str:
-        return 'BotnetService'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'BotnetServiceLayer\n'
 
 class BotnetClientService(Service):
     """!
@@ -329,10 +310,3 @@ class BotnetClientService(Service):
 
     def _createServer(self) -> Server:
         return BotnetClientServer()
-
-    def getName(self) -> str:
-        return 'BotnetClientService'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'BotnetClientServiceLayer\n'

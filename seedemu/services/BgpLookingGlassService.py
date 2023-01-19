@@ -172,12 +172,3 @@ class BgpLookingGlassService(Service):
     def configure(self, emulator: Emulator):
         self.__emulator = emulator
         return super().configure(emulator)
-
-    def getName(self) -> str:
-        return 'BgpLookingGlassService'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'BgpLookingGlassServiceLayer\n'
-
-        return out

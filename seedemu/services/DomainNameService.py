@@ -467,9 +467,6 @@ class DomainNameService(Service):
     def _doInstall(self, node: Node, server: DomainNameServer):
         server.install(node, self)
 
-    def getName(self):
-        return 'DomainNameService'
-
     def getConflicts(self) -> List[str]:
         return ['DomainNameCachingService']
     

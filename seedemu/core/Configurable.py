@@ -1,17 +1,12 @@
+from abc import ABCMeta, abstractmethod
 from .Emulator import Emulator
 
-class Configurable(object):
+class Configurable(metaclass=ABCMeta):
     """!
     @brief Configurable class.
 
-    Configurable classs are classes that need to be configure before rendering.
+    Configurable classs are classes that need to be configured before rendering.
     """
-
-    def __init__(self):
-        """!
-        @brief create a new Configurable object.
-        """
-        super().__init__()
 
     def configure(self, emulator: Emulator):
         """!

@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from abc import ABCMeta, abstractmethod
 from .Printable import Printable
+from .Loggable import Loggable
 from .Registry import Registrable
 from .Emulator import Emulator
 from .Configurable import Configurable
 from .Merger import Mergeable
 
-from sys import stderr
 from typing import Set, Dict, Tuple
 
 
-class Layer(Printable, Registrable, Configurable, Mergeable):
+class Layer(Printable, Registrable, Configurable, Mergeable, Loggable, metaclass=ABCMeta):
     """!
     @brief The layer interface.
     """
@@ -83,8 +84,9 @@ class Layer(Printable, Registrable, Configurable, Mergeable):
 
         @returns name of the layer.
         """
-        raise NotImplementedError('getName not implemented')
+        return self.__class__.__name__
 
+    @abstractmethod
     def render(self, emulator: Emulator) -> None:
         """!
         @brief Handle rendering.
@@ -95,4 +97,4 @@ class Layer(Printable, Registrable, Configurable, Mergeable):
         """!
         @brief Log to stderr.
         """
-        print("==== {}Layer: {}".format(self.getName(), message), file=stderr)
+        super().__log__("{}Layer".format(self.getName()), message)

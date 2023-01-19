@@ -51,9 +51,6 @@ class Ospf(Layer):
 
         self.addDependency('Routing', False, False)
 
-    def getName(self) -> str:
-        return 'Ospf'
-
     def markAsStub(self, asn: int, netname: str) -> Ospf:
         """!
         @brief Set all OSPF interfaces connected to a network as stub

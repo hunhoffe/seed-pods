@@ -17,9 +17,6 @@ class ResolvConfHook(Hook):
         """
         self.__servers = nameservers
 
-    def getName(self) -> str:
-        return 'ResolvConfHook'
-
     def getTargetLayer(self) -> str:
         return 'Base'
 

@@ -57,9 +57,6 @@ class Ris(DataProvider):
         json = rslt.json()
         return json['data']
 
-    def getName(self) -> str:
-        return 'Ris'
-
     def getPrefixes(self, asn: int) -> List[str]:
         if asn in self.__cache['prefixes']:
             self._log('prefix list of AS{} in cache.'.format(asn))

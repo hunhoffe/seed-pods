@@ -156,9 +156,6 @@ class DomainNameCachingService(Service):
     def _createServer(self) -> DomainNameCachingServer:
         return DomainNameCachingServer()
 
-    def getName(self) -> str:
-        return 'DomainNameCachingService'
-
     def getConflicts(self) -> List[str]:
         return ['DomainNameService']
 

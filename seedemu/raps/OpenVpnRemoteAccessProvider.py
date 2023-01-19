@@ -187,9 +187,6 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
         self.__ovpn_ca = ovpnCa
         self.__ovpn_cert = ovpnCert
         self.__ovpn_key = ovpnKey
-    
-    def getName(self) -> str:
-        return 'OpenVpn'
 
     def configureRemoteAccess(self, emulator: Emulator, netObject: Network, brNode: Node, brNet: Network):
         self._log('setting up OpenVPN remote access for {} in AS{}...'.format(netObject.getName(), brNode.getAsn()))

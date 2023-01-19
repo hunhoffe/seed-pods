@@ -52,9 +52,6 @@ class Base(Layer, Graphable):
         self.__ixes = {}
         self.__name_servers = []
 
-    def getName(self) -> str:
-        return "Base"
-
     def configure(self, emulator: Emulator):
         self._log('registering nodes...')
         for asobj in self.__ases.values():

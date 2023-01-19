@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABCMeta, abstractmethod
 from typing import List, Dict
 from .Printable import Printable
 from .Registry import Registry, Registrable
@@ -257,7 +258,7 @@ class Graph(Printable):
 
         return out
 
-class Graphable(Registrable):
+class Graphable(Registrable, metaclass=ABCMeta):
     """!
     @brief Graphable. All layers that can produce graphs will have this
     prototype.
@@ -291,7 +292,7 @@ class Graphable(Registrable):
         """!
         @brief Get name of this graph provider.
         """
-        raise NotImplementedError('getName not implemented.')
+        return self.__class__.__name__
 
     def getGraph(self, name: str) -> Graph:
         """!
@@ -313,6 +314,7 @@ class Graphable(Registrable):
         """
         return self.__graphs
 
+    @abstractmethod
     def _doCreateGraphs(self, emulator: Emulator):
         """!
         @brief handle graph creation, should be implemented by all graphable

@@ -183,11 +183,6 @@ class DomainRegistrarServer(Server):
         node.appendStartCommand('service nginx start')
         node.appendStartCommand('service php7.4-fpm start')
 
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'DomainRegistrarServer\n'
-
-        return out
 
 class DomainRegistrarService(Service):
     """!
@@ -201,18 +196,9 @@ class DomainRegistrarService(Service):
         super().__init__()
         self.addDependency('Base', False, False)
 
-    def getName(self) -> str:
-        return 'DomainRegistrarService'
-
     def _createServer(self) -> DomainRegistrarServer:
         return DomainRegistrarServer()
 
     def _doConfigure(self, node: Node, server: Server):
         # In order to identify if the target node has DomainNameService.
         assert "DomainNameService" in node.getAttribute('services') , 'DomainNameService required on node to use DomainRegistrarService.'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'DomainRegistrarService\n'
-
-        return out

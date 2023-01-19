@@ -18,9 +18,6 @@ class ResolvConfHookByAs(Hook):
         self.__servers = nameservers
         self.__asn = asn
 
-    def getName(self) -> str:
-        return 'ResolvConfHook'
-
     def getTargetLayer(self) -> str:
         return 'Base'
 

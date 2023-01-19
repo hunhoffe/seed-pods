@@ -48,9 +48,6 @@ class DistributedDocker(Docker):
         """
         super().__init__(namingScheme)
 
-    def getName(self) -> str:
-        return 'DistributedDocker'
-
     def __compileIxNetMaster(self, net) -> str:
         (scope, _, _) = net.getRegistryInfo()
         return DistributedDockerCompilerFileTemplates['compose_network_ix_master'].format(

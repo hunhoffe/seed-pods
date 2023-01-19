@@ -1,11 +1,13 @@
+from abc import ABCMeta, abstractmethod
 from seedemu.core.Service import Service
 from seedemu.core import Merger
 
-class ServiceMerger(Merger):
+class ServiceMerger(Merger, metaclass=ABCMeta):
     """!
     @brief Merger that handles merging installation targets.
     """
 
+    @abstractmethod
     def _createService(self) -> Service:
         """!
         @brief create a new services instance of the service to be merged.

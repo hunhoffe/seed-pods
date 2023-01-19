@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABCMeta, abstractmethod
 from .Layer import Layer
 from .Node import Node
 from .Printable import Printable
@@ -7,13 +8,14 @@ from .enums import NodeRole
 from .Binding import Binding
 from typing import Dict, List, Set, Tuple
 
-class Server(Printable):
+class Server(Printable, metaclass=ABCMeta):
     """!
     @brief Server class.
 
     The Server class is the handler for installed services.
     """
 
+    @abstractmethod
     def install(self, node: Node):
         """!
         @brief Install the server on node.
@@ -22,7 +24,16 @@ class Server(Printable):
         """
         raise NotImplementedError('install not implemented')
 
-class Service(Layer):
+    def getName(self) -> str:
+        return self.__class__.__name__
+
+    def print(self, indent: int) -> str:
+        out = ' ' * indent
+        out += '{}\n'.format(self.getName())
+        return out
+
+
+class Service(Layer, metaclass=ABCMeta):
     """!
     @brief Service base class.
 
@@ -38,6 +49,7 @@ class Service(Layer):
         self.__pending_targets = {}
         self.__targets = set()
 
+    @abstractmethod
     def _createServer(self) -> Server:
         """!
         @brief Create a new server.
@@ -156,4 +168,9 @@ class Service(Layer):
         @brief Get a set of pending vnode to install the service on.
         """
         return self.__pending_targets
+
+    def print(self, indent: int) -> str:
+        out = ' ' * indent
+        out += '{}\n'.format(self.getName())
+        return out
 

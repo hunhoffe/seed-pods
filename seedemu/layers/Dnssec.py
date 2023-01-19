@@ -83,9 +83,6 @@ class Dnssec(Layer):
                 if zone == zonename: return node
 
         return None
-
-    def getName(self):
-        return 'Dnssec'
     
     def enableOn(self, zonename: str) -> Dnssec:
         """!

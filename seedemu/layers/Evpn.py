@@ -100,9 +100,6 @@ class Evpn(Layer):
 
         self.__customers = set()
         self.__providers = set()
-
-    def getName(self) -> str:
-        return 'Evpn'
         
     def configureAsEvpnProvider(self, asn: int):
         '''!

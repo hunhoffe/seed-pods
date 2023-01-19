@@ -31,9 +31,6 @@ class DefaultEbgpMerger(Merger):
         super().__init__()
         self.__peeringConflictHandler = onPeeringRelationshipConflict
         self.__xcPeeringConflictHandler = onXcPeeringRelationshipConflict
-        
-    def getName(self) -> str:
-        return 'DefaultEbgpMerger'
 
     def getTargetType(self) -> str:
         return 'EbgpLayer'

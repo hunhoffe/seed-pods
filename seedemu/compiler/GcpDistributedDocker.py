@@ -208,9 +208,6 @@ class GcpDistributedDocker(Compiler):
     deploying the lab to GCP.
     """
 
-    def getName(self) -> str:
-        return 'GcpDistributedDocker'
-
     def __init_tf(self):
         """!
         @brief Get files required by Terraform ready.

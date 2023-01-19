@@ -62,10 +62,6 @@ class Ibgp(Layer, Graphable):
                 
                 self.__dfs(neigh, visited, net.getName())
 
-
-    def getName(self) -> str:
-        return 'Ibgp'
-
     def maskAsn(self, asn: int) -> Ibgp:
         """!
         @brief Mask an AS.

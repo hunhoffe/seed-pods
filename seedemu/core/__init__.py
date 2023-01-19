@@ -11,6 +11,7 @@ from .Merger import Mergeable, Merger
 from .Configurable import Configurable
 from .Hook import Hook
 from .Layer import Layer
+from .Loggable import Loggable
 from .Service import Server, Service
 from .Binding import Binding, Filter, Action
 from .Component import Component

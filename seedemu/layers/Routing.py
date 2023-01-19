@@ -67,9 +67,6 @@ class Routing(Layer):
         self.__loopback_assigner = IPv4Network(loopback_range)
         self.__loopback_pos = 1
         self.addDependency('Base', False, False)
-    
-    def getName(self) -> str:
-        return "Routing"
 
     def __installBird(self, node: Node):
         """!

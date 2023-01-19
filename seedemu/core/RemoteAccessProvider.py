@@ -1,7 +1,8 @@
 from __future__ import annotations
-from sys import stderr
+from abc import ABCMeta, abstractmethod
+from .Loggable import Loggable
 
-class RemoteAccessProvider(object):
+class RemoteAccessProvider(Loggable, metaclass=ABCMeta):
     """!
     @brief Implements logic for provide remote access to emulated network.
     """
@@ -12,8 +13,9 @@ class RemoteAccessProvider(object):
 
         @param message message.
         """
-        print("==== {}RemoteAccessProvider: {}".format(self.getName(), message), file=stderr)
+        super().__log__("{}RemoteAccessProvider".format(self.getName()), message)
 
+    @abstractmethod
     def configureRemoteAccess(self, emulator: Emulator, netObject: Network, brNode: Node, brNet: Network):
         """!
         @brief configure remote access on a given network at given AS.
@@ -35,4 +37,4 @@ class RemoteAccessProvider(object):
 
         @returns name.
         """
-        raise NotImplementedError("getName not implemented.")
+        return self.__class__.__name__

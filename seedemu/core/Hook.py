@@ -1,9 +1,10 @@
+from abc import ABCMeta, abstractmethod
 from .Emulator import Emulator
+from .Loggable import Loggable
 from .Registry import Registrable
 from .Printable import Printable
-from sys import stderr
 
-class Hook(Registrable, Printable):
+class Hook(Registrable, Printable, Loggable, metaclass=ABCMeta):
     """!
     @brief Hook into the rendering procress.
     """
@@ -12,14 +13,15 @@ class Hook(Registrable, Printable):
         """!
         @brief Log to stderr.
         """
-        print("==== {}Hook: {}".format(self.getName(), message), file=stderr)
+        super().__log__("{}Hook".format(self.getName()), message)
 
     def getName(self) -> str:
         """!
         @brief Get the name of the hook.
         """
-        raise NotImplementedError("getName not implemented.")
+        return self.__class__.__name__
         
+    @abstractmethod
     def getTargetLayer(self) -> str:
         """!
         @brief Get the name of layer to target.

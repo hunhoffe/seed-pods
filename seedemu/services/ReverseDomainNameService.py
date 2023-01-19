@@ -25,9 +25,6 @@ class ReverseDomainNameService(Service):
         self.addDependency('DomainNameService', True, False)
         self.addDependency('Base', False, False)
 
-    def getName(self) -> str:
-        return 'ReverseDomainNameService'
-
     def _createServer(self) -> Server:
         return ReverseDomainNameServer()
 
@@ -59,10 +56,4 @@ class ReverseDomainNameService(Service):
                 zone.addRecord(record)
 
         return super().configure(emulator)
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'ReverseDomainNameService\n'
-
-        return out
     

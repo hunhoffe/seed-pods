@@ -669,7 +669,6 @@ class EthereumServer(Server):
 
         return self
 
-
     def getBootNodeHttpPort(self) -> int:
         """!
         @brief get the http server port number hosting the enode url file.
@@ -764,7 +763,6 @@ class EthereumServer(Server):
 
         return self
 
-    
     def createAccounts(self, number: int = 1, balance: int=0, password: str = "admin") -> EthereumServer:
         """
         @brief Call this api to create new accounts
@@ -822,7 +820,6 @@ class EthereumServer(Server):
         """
 
         return self.__accounts
-        
 
     def unlockAccounts(self) -> EthereumServer:
         """!
@@ -861,7 +858,6 @@ class EthereumServer(Server):
         self.__smart_contract = smart_contract
 
         return self
-
 
 class EthereumService(Service):
     """!
@@ -904,9 +900,6 @@ class EthereumService(Service):
         self.__save_state = saveState
         self.__save_path = savePath
         self.__override = override
-
-    def getName(self):
-        return 'EthereumService'
 
     def getBootNodes(self, consensusMechanism:ConsensusMechanism) -> List[str]:
         """

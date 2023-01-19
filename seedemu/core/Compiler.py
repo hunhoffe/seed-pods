@@ -1,16 +1,18 @@
+from abc import ABCMeta, abstractmethod
 from seedemu.core.Emulator import Emulator
+from seedemu.core import Loggable
 from seedemu.core import Registry
 from os import mkdir, chdir, getcwd, path
 from shutil import rmtree
-from sys import stderr, exit
+from sys import exit
 
-class Compiler:
+class Compiler(Loggable, metaclass=ABCMeta):
     """!
     @brief The Compiler base class.
 
     Compiler takes the rendered result and compiles them to working emulators.
     """
-
+    @abstractmethod
     def _doCompile(self, emulator: Emulator):
         """!
         @brief Compiler driver implementation.
@@ -29,7 +31,7 @@ class Compiler:
 
         @returns name of the driver.
         """
-        raise NotImplementedError('getName not implemented.')
+        return self.__class__.__name__
 
     def compile(self, emulator: Emulator, output: str, override: bool = False):
         """!
@@ -61,4 +63,4 @@ class Compiler:
 
         @param message message.
         """
-        print("== {}Compiler: {}".format(self.getName(), message), file=stderr)
+        super().__log__("{}Compiler".format(self.getName()), message)

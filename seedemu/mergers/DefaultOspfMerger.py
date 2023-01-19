@@ -6,9 +6,6 @@ class DefaultOspfMerger(Merger):
     @brief default OSPF layer merging implementation.
     """
 
-    def getName(self) -> str:
-        return 'DefaultOspfMerger'
-
     def getTargetType(self) -> str:
         return 'OspfLayer'
 

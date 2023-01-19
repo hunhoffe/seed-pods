@@ -132,13 +132,6 @@ class DHCPServer(Server):
 
         node.appendStartCommand('/etc/init.d/isc-dhcp-server restart')
 
-    
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'DHCP server object.\n'
-
-        return out
-
 class DHCPService(Service):
     """!
     @brief The dynamic host configuration protocol service class.
@@ -161,12 +154,3 @@ class DHCPService(Service):
         targets = self.getTargets()
         for (server, node) in targets:
             server.configure(node, emulator)
-
-    def getName(self) -> str:
-        return 'DHCPService'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'DHCPServiceLayer\n'
-
-        return out

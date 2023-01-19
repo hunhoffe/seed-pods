@@ -60,9 +60,6 @@ class DefaultDomainNameServiceMerger(ServiceMerger):
     def _createService(self) -> DomainNameService:
         return DomainNameService()
 
-    def getName(self) -> str:
-        return 'DefaultDomainNameServiceMerger'
-
     def getTargetType(self) -> str:
         return 'DomainNameServiceLayer'
 

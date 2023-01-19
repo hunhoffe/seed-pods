@@ -425,12 +425,6 @@ class TorServer(Server):
         node.appendStartCommand("tor-entrypoint")
         node.appendStartCommand("tor -f /etc/tor/torrc")
 
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'TorServer'
-
-        return out
-
 class TorService(Service):
     """!
     @brief The Tor network service.
@@ -439,9 +433,6 @@ class TorService(Service):
     def __init__(self):
         super().__init__()
         self.__da_nodes = []
-
-    def getName(self):
-        return 'TorService'
 
     def _doConfigure(self, node: Node, server: TorServer):
         server.configure(node, self)

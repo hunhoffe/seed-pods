@@ -9,9 +9,6 @@ class Graphviz(Compiler):
     def __slugify(self, filename):
         return ''.join([c for c in filename if c.isalpha() or c.isdigit() or c == ' ']).rstrip()
 
-    def getName(self) -> str:
-        return 'Graphviz'
-
     def _doCompile(self, emulator: Emulator):
         reg = emulator.getRegistry()
         self._log('collecting graphs in the emulator...')

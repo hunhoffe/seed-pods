@@ -191,10 +191,7 @@ class Ebgp(Layer, Graphable):
                 exportFilter = "all",
                 importCommunity = "PROVIDER_COMM",
                 bgpPref = 10
-            ))   
-
-    def getName(self) -> str:
-        return "Ebgp"
+            ))
 
     def addPrivatePeering(self, ix: int, a: int, b: int, abRelationship: PeerRelationship = PeerRelationship.Peer) -> Ebgp:
         """!

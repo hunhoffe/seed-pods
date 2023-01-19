@@ -351,9 +351,6 @@ class Docker(Compiler):
         for image in DefaultImages:
             self.addImage(image)
 
-    def getName(self) -> str:
-        return "Docker"
-
     def addImage(self, image: DockerImage, priority: int = 0) -> Docker:
         """!
         @brief add an candidate image to the compiler.

@@ -31,9 +31,6 @@ class DefaultBaseMerger(Merger):
         self.__asConflictHandler = onAsConflict
         self.__ixConflictHandler = onIxConflict
 
-    def getName(self) -> str:
-        return 'DefaultBaseMerger'
-
     def getTargetType(self) -> str:
         return 'BaseLayer'
 

@@ -9,9 +9,6 @@ class DefaultCymruIpOriginServiceMerger(ServiceMerger):
     to handler merging installation targets, and merge manually created records.
     """
 
-    def getName(self) -> str:
-        return 'DefaultCymruIpOriginServiceMerger'
-
     def getTargetType(self) -> str:
         return 'CymruIpOriginServiceLayer'
 

@@ -1,11 +1,13 @@
 from __future__ import annotations
-from sys import stderr
+from abc import ABCMeta, abstractmethod
+from .Loggable import Loggable
 
-class Mergeable(object):
+class Mergeable(metaclass=ABCMeta):
     """!
     @brief Mergeable base class
     """
 
+    @abstractmethod
     def getTypeName(self) -> str:
         """!
         @brief Get type name of the current object. 
@@ -14,6 +16,7 @@ class Mergeable(object):
         """
         raise NotImplementedError("getTypeName not implemented.")
 
+    @abstractmethod
     def shouldMerge(self, other: Mergeable) -> bool:
         """!
         @brief Test if two object should be merged, or treated as different
@@ -27,7 +30,7 @@ class Mergeable(object):
         raise NotImplementedError("equals not implemented.")
 
 
-class Merger(object):
+class Merger(Loggable, metaclass=ABCMeta):
     """!
     @brief Merger base class. 
 
@@ -40,8 +43,9 @@ class Merger(object):
 
         @returns name.
         """
-        raise NotImplementedError("getName not implemented.")
+        return self.__class__.__name__
 
+    @abstractmethod
     def getTargetType(self) -> str:
         """!
         @brief Get the type name of objects that this merger can handle.
@@ -50,7 +54,7 @@ class Merger(object):
         """
         raise NotImplementedError("getTargetType not implemented.")
 
-
+    @abstractmethod
     def doMerge(self, objectA: Mergeable, objectB: Mergeable) -> Mergeable:
         """!
         @brief Do merging.
@@ -62,4 +66,7 @@ class Merger(object):
         raise NotImplementedError("doMerge not implemented.")
 
     def _log(self, message):
-        print('== {}: {}'.format(self.getName(), message), file=stderr)
+        """!
+        @brief Log to stderr.
+        """
+        super().__log__(self.getName(), message)

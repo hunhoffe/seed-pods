@@ -1,16 +1,13 @@
-class Printable(object):
+from abc import ABCMeta, abstractmethod
+
+class Printable(metaclass=ABCMeta):
     """!
     @brief Printable class.
 
-    Implement this class for indentable print.
+    Implement this abstract class for indentable print.
     """
 
-    def __init__(self):
-        """!
-        @brief construct a new Printable object.
-        """
-        super().__init__()
-
+    @abstractmethod
     def print(self, indentation: int = 0) -> str:
         """!
         @brief get printable string.

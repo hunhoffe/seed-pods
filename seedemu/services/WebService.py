@@ -66,12 +66,6 @@ class WebServer(Server):
         node.setFile('/etc/nginx/sites-available/default', WebServerFileTemplates['nginx_site'].format(port = self.__port))
         node.appendStartCommand('service nginx start')
         node.appendClassName("WebService")
-        
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'Web server object.\n'
-
-        return out
 
 class WebService(Service):
     """!
@@ -87,12 +81,3 @@ class WebService(Service):
 
     def _createServer(self) -> Server:
         return WebServer()
-
-    def getName(self) -> str:
-        return 'WebService'
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'WebServiceLayer\n'
-
-        return out

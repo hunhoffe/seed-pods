@@ -39,9 +39,6 @@ class CymruIpOriginService(Service):
     def _createServer(self) -> Server:
         return CymruIpOriginServer()
 
-    def getName(self) -> str:
-        return 'CymruIpOriginService'
-
     def addMapping(self, prefix: str, asn: int) -> CymruIpOriginService:
         """!
         @brief Add new prefix -> asn mapping.
@@ -137,11 +134,5 @@ class CymruIpOriginService(Service):
         for record in self.__records:
             zone.addRecord(record)
 
-        return super().configure(emulator)        
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += 'CymruIpOriginService\n'
-
-        return out
+        return super().configure(emulator)
 

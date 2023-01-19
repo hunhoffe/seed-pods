@@ -99,9 +99,6 @@ class Mpls(Layer, Graphable):
 
         self.addDependency('Routing', False, False)
 
-    def getName(self) -> str:
-        return 'Mpls'
-
     def markAsEdge(self, asn: int, nodename: str) -> Mpls:
         """!
         @brief Mark a router node as edge node.
