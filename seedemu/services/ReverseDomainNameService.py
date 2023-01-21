@@ -1,6 +1,6 @@
 from .DomainNameService import DomainNameService, DomainNameServer
 from seedemu.core import Node, NodeSoftware, Emulator, Service, Server
-from typing import Set
+from typing import List
 
 class ReverseDomainNameServer(Server):
     """!
@@ -11,13 +11,13 @@ class ReverseDomainNameServer(Server):
         pass
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set()
+        return []
 
 class ReverseDomainNameService(Service):
     """!
@@ -68,7 +68,7 @@ class ReverseDomainNameService(Service):
         return super().configure(emulator)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

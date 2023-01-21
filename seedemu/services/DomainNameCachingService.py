@@ -2,7 +2,7 @@ from __future__ import annotations
 from seedemu.core import Configurable, Service, Server
 from seedemu.core import Node, NodeSoftware, ScopedRegistry, Emulator
 from .DomainNameService import DomainNameService
-from typing import List, Dict, Set
+from typing import List, Dict
 
 DomainNameCachingServiceFileTemplates: Dict[str, str] = {}
 
@@ -80,7 +80,7 @@ class DomainNameCachingServer(Server, Configurable):
         """!
         @brief Add a new forward zone, foward to the given virtual node name.
 
-        @param name zone name.
+        @param zone zone name.
         @param vnode  virtual node name.
 
         @returns self, for chaining API calls.
@@ -131,13 +131,13 @@ class DomainNameCachingServer(Server, Configurable):
             hnode.appendFile('/etc/resolv.conf.new', 'nameserver {}\n'.format(addr))
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('bind9')}
+        return [NodeSoftware('bind9')]
 
 class DomainNameCachingService(Service):
     """!
@@ -183,7 +183,7 @@ class DomainNameCachingService(Service):
                 server.setRootServers(root_servers)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

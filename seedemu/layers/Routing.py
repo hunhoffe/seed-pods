@@ -1,5 +1,5 @@
-from seedemu.core import ScopedRegistry, Node, NodeSoftware, Interface, Network, Emulator, Layer, Router, RealWorldRouter
-from typing import List, Dict, Set
+from seedemu.core import ScopedRegistry, Node, NodeFile, NodeSoftware, Interface, Network, Emulator, Layer, Router, RealWorldRouter
+from typing import List, Dict
 from ipaddress import IPv4Network
 
 RoutingFileTemplates: Dict[str, str] = {}
@@ -10,6 +10,7 @@ RoutingFileTemplates["bird_install"] = """\
 mkdir -p /usr/share/doc/bird2/examples/
 touch /usr/share/doc/bird2/examples/bird.conf
 apt-get update && apt-get install -y --no-install-recommends bird2
+[ ! -d /run/bird ] && mkdir /run/bird
 """
 
 RoutingFileTemplates["rs_bird"] = """\
@@ -78,18 +79,18 @@ class Routing(Layer):
 
     def __installBird(self, node: Node):
         """!
-        @brief Install bird on node, and handle the bug. TODO(hunhoffe): What bug is this?
+        @brief Install bird on node, and handle the bug.
         """
-        node.addSoftware(NodeSoftware("bird", RoutingFileTemplates["bird_install"]))
+        node.addSoftware(NodeSoftware("bird", NodeFile('/bird_install.sh', content=RoutingFileTemplates["bird_install"], isExecutable=True)))
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware("bird", RoutingFileTemplates["bird_install"])}
+        return [NodeSoftware("bird", NodeFile('./bird_install.sh', content=RoutingFileTemplates["bird_install"], isExecutable=True))]
 
     def configure(self, emulator: Emulator):
         reg = emulator.getRegistry()

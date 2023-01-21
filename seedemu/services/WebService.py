@@ -1,6 +1,6 @@
 from __future__ import annotations
 from seedemu.core import Node, NodeSoftware, Service, Server
-from typing import Dict, Set
+from typing import Dict, List
 
 WebServerFileTemplates: Dict[str, str] = {}
 
@@ -68,13 +68,13 @@ class WebServer(Server):
         node.appendClassName("WebService")
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('nginx-light')}
+        return [NodeSoftware('nginx-light')]
 
 class WebService(Service):
     """!
@@ -92,7 +92,7 @@ class WebService(Service):
         return WebServer()
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

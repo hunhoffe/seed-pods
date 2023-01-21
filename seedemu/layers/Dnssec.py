@@ -121,9 +121,8 @@ class Dnssec(Layer):
             node.appendFile('/dnssec_zones.txt', '{}\n'.format(zonename))
 
         for node in nodes:
-            node.appendFile('/enable_dnssec', DnssecFileTemplates['enable_dnssec_script'])
-            node.appendStartCommand('chmod +x /enable_dnssec')
-            node.appendStartCommand('/enable_dnssec')
+            node.appendFile('/enable_dnssec.sh', content=DnssecFileTemplates['enable_dnssec_script'], isExecutable=True)
+            node.appendStartCommand('/enable_dnssec.sh')
 
     def print(self, indent: int) -> str:
         out = ' ' * indent
@@ -141,12 +140,12 @@ class Dnssec(Layer):
         return out
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set()
+        return []
             
 

@@ -2,8 +2,8 @@
 # encoding: utf-8
 # __author__ = 'Demon'
 from __future__ import annotations
-from seedemu.core import Node, NodeSoftware, Service, Server, Emulator
-from typing import Dict, Set
+from seedemu.core import Node, NodeFile, NodeSoftware, Service, Server, Emulator
+from typing import Dict
 
 BYOB_VERSION='3924dd6aea6d0421397cdf35f692933b340bfccf'
 
@@ -99,7 +99,7 @@ index 5c5958a..ea1c9d4 100644
      if sys.version_info[0] > 2:
 '''
 
-BOTNET_DEFAULT_SOFTWARE = {
+BOTNET_DEFAULT_SOFTWARE = [
     NodeSoftware('git'),
     NodeSoftware('cmake'),
     NodeSoftware('python3-dev'),
@@ -107,8 +107,8 @@ BOTNET_DEFAULT_SOFTWARE = {
     NodeSoftware('g++'),
     NodeSoftware('make'),
     NodeSoftware('python3-pip'),
-    NodeSoftware('byob', BotnetServerFileTemplates['byob_install'])
-}
+    NodeSoftware('byob', NodeFile('byob_install.sh', BotnetServerFileTemplates['byob_install'], isExecutable=True))
+]
 
 class BotnetServer(Server):
     """!
@@ -180,22 +180,20 @@ class BotnetServer(Server):
         node.appendStartCommand('git -C /tmp/byob/ apply /tmp/byob.patch')
 
         # add the init script to server
-        node.setFile('/tmp/byob_server_init_script', BotnetServerFileTemplates['server_init_script'])
-        node.appendStartCommand('chmod +x /tmp/byob_server_init_script')
+        node.setFile('/tmp/byob_server_init_script', BotnetServerFileTemplates['server_init_script'], isExecutable=True)
 
         # start the server & make dropper/stager/payload
         node.appendStartCommand('/tmp/byob_server_init_script "{}" "{}"'.format(address, self.__port))
 
         # script to start byob shell on correct port
-        node.setFile('/bin/start-byob-shell', BotnetServerFileTemplates['start-byob-shell'].format(self.__port))
-        node.appendStartCommand('chmod +x /bin/start-byob-shell')
+        node.setFile('/bin/start-byob-shell', BotnetServerFileTemplates['start-byob-shell'].format(self.__port), isExecutable=True)
 
         # set attributes for client to find us
         node.setAttribute('botnet_addr', address)
         node.setAttribute('botnet_port', self.__port + 1)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
@@ -281,11 +279,11 @@ class BotnetClientServer(Server):
 
         # script to get dropper from server.
         if self.__dga == None:
-            node.setFile('/tmp/byob_client_dropper_runner', BotnetServerFileTemplates['client_dropper_runner'])
+            node.setFile('/tmp/byob_client_dropper_runner', BotnetServerFileTemplates['client_dropper_runner'], isExecutable=True)
         else:
             fork = True
             node.setFile('/dga', self.__dga)
-            node.setFile('/tmp/byob_client_dropper_runner', BotnetServerFileTemplates['client_dropper_runner_dga'])
+            node.setFile('/tmp/byob_client_dropper_runner', BotnetServerFileTemplates['client_dropper_runner_dga'], isExecutable=True)
 
         server: Node = self.__emulator.getBindingFor(self.__server)
 
@@ -295,11 +293,10 @@ class BotnetClientServer(Server):
         assert addr != None and port != None, 'cannot find server details from botnet controller the node on {} (as{}/{}). is botnet controller installed on it?'.format(self.__server, server.getAsn(), server.getName())
 
         # get and run dropper from server.
-        node.appendStartCommand('chmod +x /tmp/byob_client_dropper_runner')
         node.appendStartCommand('/tmp/byob_client_dropper_runner "{}" "{}"'.format(addr, port), fork)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
@@ -323,7 +320,7 @@ class BotnetService(Service):
         return BotnetServer()
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
@@ -356,7 +353,7 @@ class BotnetClientService(Service):
         return BotnetClientServer()
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

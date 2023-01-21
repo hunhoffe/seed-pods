@@ -1,5 +1,7 @@
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import Set
+from .NodeFile import NodeFile
+from typing import List
 
 class NodeSoftware(object):
     """!
@@ -9,9 +11,9 @@ class NodeSoftware(object):
     """
 
     __name: str
-    __installScript: str
+    __installScript: NodeFile
 
-    def __init__(self, name: str, installScript: str = None) -> None:
+    def __init__(self, name: str, installScript: NodeFile = None):
         """!
         @brief create a new software dependency to be installed on a Node.
 
@@ -20,14 +22,26 @@ class NodeSoftware(object):
         """
         self.__name = name
         self.__installScript = installScript
+        if self.__installScript:
+            assert self.__installScript.isExecutable(), "Install scripts must be executable files"
 
-    def getName(self) -> str:
+    @property
+    def name(self) -> str:
         """!
         @brief get the name of this software.
 
         @returns name.
         """
         return self.__name
+
+    @property
+    def installScript(self) -> NodeFile:
+        """!
+        @brief returns the contents of the installScript.
+
+        @return returns the contents of the installScript
+        """
+        return self.__installScript
 
     def usePackageManager(self) -> bool:
         """!
@@ -37,19 +51,13 @@ class NodeSoftware(object):
         """
         return self.__installScript is None
 
-    def getInstallScript(self) -> str:
-        """!
-        @brief returns the contents of the installScript.
-
-        @return returns the contents of the installScript
-        """
-        return self.__installScript
-
     def __repr__(self) -> str:
         return f"Software(\"{self.__name}\", usPackageManager={self.usePackageManager()})"
 
     def __eq__(self, obj):
-        return isinstance(obj, NodeSoftware) and obj.__name == self.__name and obj.__installScript == self.__installScript
+        return isinstance(obj, NodeSoftware) and \
+            obj.__name == self.__name and \
+            obj.__installScript == self.__installScript
 
     def __gt__(self, obj):
         return self.__name > obj.__name
@@ -66,7 +74,7 @@ class NodeSoftwareInstaller(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

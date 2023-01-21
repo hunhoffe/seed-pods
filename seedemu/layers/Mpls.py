@@ -207,19 +207,18 @@ class Mpls(Layer, Graphable):
             ldpInterfaces = ldp_ifaces
         ))
 
-        node.setFile('/frr_start', MplsFileTemplates['frr_start_script'])
-        node.setFile('/mpls_ifaces.txt', '\n'.join(mpls_iface_list))
-        node.appendStartCommand('chmod +x /frr_start')
-        node.appendStartCommand('/frr_start')
+        node.setFile('/mpls_ifaces.txt', content='\n'.join(mpls_iface_list))
+        node.setFile('/frr_start.sh', content=MplsFileTemplates['frr_start_script'], isExecutable=True)
+        node.appendStartCommand('/frr_start.sh')
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('frr')}
+        return [NodeSoftware('frr')]
 
     def __setUpIbgpMesh(self, nodes: List[Router]):
         """!

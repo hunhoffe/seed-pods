@@ -6,7 +6,7 @@ from __future__ import annotations
 from enum import Enum
 from os import mkdir, path, makedirs, rename
 from seedemu.core import Node, NodeSoftware, Service, Server, Emulator
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple
 
 import json
 from datetime import datetime, timezone
@@ -512,8 +512,7 @@ class EthereumServer(Server):
         # install geth or load from custom binary path
         if self.__custom_geth_binary_path : 
             node.addSoftware(NodeSoftware('bootnode', BOOTNODE_INSTALL), self)
-            node.importFile("../../"+self.__custom_geth_binary_path, '/usr/bin/geth')
-            node.appendStartCommand("chmod +x /usr/bin/geth")
+            node.setFile("../../"+self.__custom_geth_binary_path, hostPath='/usr/bin/geth', isExecutable=True)
         else:
             node.addSoftware(NodeSoftware('geth', GETH_BOOTNODE_INSTALL), self)
 
@@ -538,10 +537,9 @@ class EthereumServer(Server):
         bootnodes = eth.getBootNodes(self.__consensus_mechanism)[:]
         if len(bootnodes) > 0 :
             node.setFile('/tmp/eth-nodes', '\n'.join(bootnodes))
-            node.setFile('/tmp/eth-bootstrapper', ETHServerFileTemplates['bootstrapper'])
+            node.setFile('/tmp/eth-bootstrapper', ETHServerFileTemplates['bootstrapper'], isExecutable=True)
 
             # load enode urls from other nodes
-            node.appendStartCommand('chmod +x /tmp/eth-bootstrapper')
             node.appendStartCommand('/tmp/eth-bootstrapper')
 
         # launch Ethereum process.
@@ -552,13 +550,13 @@ class EthereumServer(Server):
             node.appendStartCommand('(\n {})&'.format(smartContractCommand))
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set([NodeSoftware('software-properties-common'), NodeSoftware('bootnode', BOOTNODE_INSTALL), NodeSoftware('geth', GETH_BOOTNODE_INSTALL)])
+        return [[NodeSoftware('software-properties-common'), NodeSoftware('bootnode', BOOTNODE_INSTALL), NodeSoftware('geth', GETH_BOOTNODE_INSTALL)]]
 
     def setCustomGeth(self, customGethBinaryPath:str) -> EthereumServer:
         """
@@ -621,7 +619,7 @@ class EthereumServer(Server):
 
     def setSnapshot(self, snapshot:bool = True) -> EthereumServer:
         """!
-        @breif set geth snapshot 
+        @brief set geth snapshot 
         
         @param snapshot bool
 
@@ -995,7 +993,7 @@ class EthereumService(Service):
         return EthereumServer(self.__serial)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

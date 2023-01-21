@@ -13,13 +13,13 @@ class CymruIpOriginServer(Server):
         pass
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set()
+        return []
 
 class CymruIpOriginService(Service):
     """!
@@ -146,7 +146,7 @@ class CymruIpOriginService(Service):
         return super().configure(emulator)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

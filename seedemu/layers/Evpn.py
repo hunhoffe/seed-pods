@@ -174,19 +174,18 @@ class Evpn(Layer):
     def __configureFrr(self, router: Router):
         self._log('setting up FRR on as{}/{}'.format(router.getAsn(), router.getName()))
 
-        router.setFile('/frr_start', EvpnFileTemplates['frr_start_script'])
-        router.appendStartCommand('chmod +x /frr_start')
-        router.appendStartCommand('/frr_start')
+        router.setFile('/frr_start.sh', content=EvpnFileTemplates['frr_start_script'], isExecutable=True)
+        router.appendStartCommand('/frr_start.sh')
         router.addSoftware(NodeSoftware('frr'))
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('frr')}
+        return [NodeSoftware('frr')]
 
     def __configureProviderRouter(self, router: Router, peers: List[Router] = []):
         self._log('configuring common properties for provider router as{}/{}'.format(router.getAsn(), router.getName()))

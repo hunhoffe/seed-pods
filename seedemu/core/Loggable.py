@@ -17,4 +17,9 @@ class Loggable(metaclass=ABCMeta):
         
 
     def __log__(self, name, message) -> None:
+        """!
+        @brief helper function with common log format. Can be used by implementors of _log.
+        @param name the name of the class
+        @param message the message to log
+        """
         print('== {}: {}'.format(name, message), file=stderr)

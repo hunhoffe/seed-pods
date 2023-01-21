@@ -1,7 +1,9 @@
 from __future__ import annotations
+from copy import deepcopy
 from .Printable import Printable
 from .Network import Network
 from .enums import NodeRole
+from .NodeFile import NodeFile
 from .NodeSoftware import NodeSoftware, NodeSoftwareInstaller
 from .Registry import Registrable
 from .Emulator import Emulator
@@ -12,84 +14,6 @@ from ipaddress import IPv4Address, IPv4Interface
 from typing import List, Dict, Set, Tuple
 from string import ascii_letters
 from random import choice
-
-class File(Printable):
-    """!
-    @brief File class.
-
-    This class represents a file on a node.
-    """
-
-    __content: str
-    __path: str
-
-    def __init__(self, path: str, content: str = ''):
-        """!
-        @brief File constructor.
-
-        Put a file onto a node.
-
-        @param path path of the file.
-        @param content content of the file.
-        """
-        self.__path = path
-        self.__content = content
-
-    def setPath(self, path: str) -> File:
-        """!
-        @brief Update file path.
-
-        @param path new path.
-
-        @returns self, for chaining API calls.
-        """
-        self.__path = path
-
-        return self
-
-    def setContent(self, content: str) -> File:
-        """!
-        @brief Update file content.
-
-        @param content content.
-
-        @returns self, for chaining API calls.
-        """
-        self.__content = content
-
-        return self
-
-    def appendContent(self, content: str) -> File:
-        """!
-        @brief Append to file.
-
-        @param content content.
-
-        @returns self, for chaining API calls.
-        """
-        self.__content += content
-
-        return self
-
-    def get(self) -> Tuple[str, str]:
-        """!
-        @brief Get file path and content.
-
-        @returns a tuple where the first element is path and second element is 
-        content
-        """
-        return (self.__path, self.__content)
-
-    def print(self, indent: int) -> str:
-        out = ' ' * indent
-        out += "{}:\n".format(self.__path)
-        indent += 4
-        for line in self.__content.splitlines():
-            out += ' ' * indent
-            out += '> '
-            out += line
-            out += '\n'
-        return out
 
 class Interface(Printable):
     """!
@@ -195,6 +119,12 @@ class Interface(Printable):
 
         return out
 
+DefaultNodeFiles = {}
+DefaultNodeFiles['configure_zshrc.sh'] = """\
+#!/bin/bash
+curl -L https://grml.org/zsh/zshrc > /root/.zshrc
+"""
+
 class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
     """!
     @brief Node base class.
@@ -209,9 +139,8 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
     __classes: List[str]
     __label: Dict[str, str]
     __interfaces: List[Interface]
-    __files: Dict[str, File]
-    __imported_files: Dict[str, str]
-    __softwares: Set[NodeSoftware]
+    __files: Dict[str, NodeFile]
+    __softwares: List[NodeSoftware]
     __build_commands: List[str]
     __start_commands: List[Tuple[str, bool]]
     __ports: List[Tuple[int, int, str]]
@@ -226,7 +155,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
 
     __name_servers: List[str]
 
-    __DEFAULT_SOFTWARE: Set[NodeSoftware] = {
+    __DEFAULT_SOFTWARE: List[NodeSoftware] = [
         NodeSoftware('zsh'),
         NodeSoftware('curl'),
         NodeSoftware('nano'),
@@ -239,10 +168,11 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         NodeSoftware('dnsutils'),
         NodeSoftware('jq'),
         NodeSoftware('ipcalc'),
-        NodeSoftware('netcat')
-    }
+        NodeSoftware('netcat'),
+        NodeSoftware('configure_zshrc', NodeFile("/configure_zshrc.sh", content=DefaultNodeFiles['configure_zshrc.sh'], isExecutable=True))
+    ]
 
-    __SOFTWARE_DEPENDENCIES = __DEFAULT_SOFTWARE | {NodeSoftware('isc-dhcp-client')}
+    __SOFTWARE_DEPENDENCIES = __DEFAULT_SOFTWARE + [NodeSoftware('isc-dhcp-client')]
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None):
         """!
@@ -257,7 +187,6 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
 
         self.__interfaces = []
         self.__files = {}
-        self.__imported_files = {}
         self.__asn = asn
         self.__role = role
         self.__name = name
@@ -343,7 +272,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
             self.insertStartCommand(idx, 'echo "nameserver {}" >> /etc/resolv.conf'.format(s))
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
@@ -455,7 +384,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
                     cp $filename /etc/resolv.conf
                     rm $filename
             fi                
-            '''.format(iface=net.getName()))
+            '''.format(iface=net.getName(), isExecutable=True))
             self.appendStartCommand('chmod +x dhclient.sh; ./dhclient.sh')
             
         else: _addr = IPv4Address(address)
@@ -588,6 +517,8 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
     def setLabel(self, key:str, value:str) -> Node:
         """!
         @brief Add Label to a current node
+        @param key the label key
+        @param value the label value
 
         @returns self, for chaining API calls.
         """
@@ -595,10 +526,15 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         self.__label[key] = value
         return self
 
-    def getLabel(self) -> dict:
+    def getLabel(self) -> Dict[str, str]:
+        """!
+        @brief returns the dictionary of node labels
+
+        @return the dictionary of node lables
+        """
         return self.__label
-        
-    def getFile(self, path: str) -> File:
+
+    def getFile(self, path: str) -> NodeFile:
         """!
         @brief Get a file object, and create if not exist.
 
@@ -606,29 +542,31 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         @returns file.
         """
         if path in self.__files: return self.__files[path]
-        self.__files[path] = File(path)
+        self.__files[path] = NodeFile(path)
         return self.__files[path]
 
-    def getFiles(self) -> List[File]:
+    def getFiles(self) -> List[NodeFile]:
         """!
         @brief Get all files.
 
         @return list of files.
         """
-        return self.__files.values()
+        return list(self.__files.values())
 
-    def setFile(self, path: str, content: str) -> Node:
+    def setFile(self, path: str, content: str = None, hostPath: str = None, isExecutable: bool = False) -> Node:
         """!
-        @brief Set content of the file.
+        @brief Add a file to the node.
 
-        @param path path of the file. Will be created if not exist, and will be
+        @param path path of the file. Will be created if not exist, and will
         override if already exist.
-        @param content file content.
+        @param content contents the contents of the file
+        @param hostPath host path if file is local to host
+        @param isExecutable true if the file needs to be executable
 
         @returns self, for chaining API calls.
         """
-        self.getFile(path).setContent(content)
-
+        file = NodeFile(path, content=content, hostPath=hostPath, isExecutable=isExecutable)
+        self.__files[path] = file
         return self
 
     def appendFile(self, path: str, content: str) -> Node:
@@ -641,29 +579,6 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         @returns self, for chaining API calls.
         """
         self.getFile(path).appendContent(content)
-
-        return self
-
-    def getImportedFiles(self) -> Dict[str, str]:
-        """!
-        @brief Get imported files.
-
-        @returns dict of imported files, where key = path of the file in the
-        container, value = path of the file on the host.
-        """
-        return self.__imported_files
-    
-    def importFile(self, hostpath: str, containerpath: str) -> Node:
-        """!
-        @brief Import a file from the host to the container.
-
-        @param hostpath path of the file on the host. (should be absolute to
-        prevent issues)
-        @param containerpath path of the file in the container.
-
-        @returns self, for chaining API calls.
-        """
-        self.__imported_files[containerpath] = hostpath
 
         return self
 
@@ -684,7 +599,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
 
         return self
 
-    def getSoftware(self) -> Set[NodeSoftware]:
+    def getSoftware(self) -> List[NodeSoftware]:
         """!
         @brief Get set of software.
 
@@ -810,9 +725,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         for s in node.getSoftware(): self.addSoftware(s)
 
         for file in node.getFiles():
-            (path, content) = file.get()
-            self.setFile(path, content)
-        
+            self.__files[file.getPath()] = deepcopy(file)
 
     def print(self, indent: int) -> str:
         out = ' ' * indent
@@ -911,7 +824,7 @@ class Router(Node):
 
         @param protocol protocol type. (e.g., bgp, ospf)
         @param name protocol name.
-        @param body protocol body.
+        @param body protocol body
 
         @returns self, for chaining API calls.
         """
@@ -920,7 +833,6 @@ class Router(Node):
             name = name,
             body = body
         ))
-
         return self
 
     def addTablePipe(self, src: str, dst: str = 'master4', importFilter: str = 'none', exportFilter: str = 'all', ignoreExist: bool = True) -> Router:
@@ -1027,9 +939,8 @@ class RealWorldRouter(Router):
         if self.__sealed: return
         self.__sealed = True
         if len(self.__realworld_routes) == 0: return
-        self.setFile('/rw_configure_script', RouterFileTemplates['rw_configure_script'])
+        self.setFile('/rw_configure_script', RouterFileTemplates['rw_configure_script'], isExecutable=True)
         self.insertStartCommand(0, '/rw_configure_script')
-        self.insertStartCommand(0, 'chmod +x /rw_configure_script')
         self.addTable('t_rw')
         statics = '\n    ipv4 { table t_rw; import all; };\n    route ' + ' via !__default_gw__!;\n    route '.join(self.__realworld_routes)
         statics += ' via !__default_gw__!;\n'
@@ -1046,13 +957,13 @@ class RealWorldRouter(Router):
         # self.addTablePipe('t_rw', 't_ospf') # TODO
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return super().softwareDeps + {NodeSoftware('iptables')}
+        return super().softwareDeps + [NodeSoftware('iptables')]
 
     def print(self, indent: int) -> str:
         out = super(RealWorldRouter, self).print(indent)

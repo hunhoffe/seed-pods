@@ -1,5 +1,5 @@
 from __future__ import annotations
-from seedemu.core import AutonomousSystem, InternetExchange, AddressAssignmentConstraint, Node, Graphable, Emulator, Layer
+from seedemu.core import AutonomousSystem, InternetExchange, AddressAssignmentConstraint, Node, NodeFile, Graphable, Emulator, Layer
 from typing import Dict, List
 
 BaseFileTemplates: Dict[str, str] = {}
@@ -81,9 +81,8 @@ class Base(Layer, Graphable):
                 ifinfo += '{}:{}:{}:{}:{}\n'.format(net.getName(), net.getPrefix(), l, b, d)
 
             node.setFile('/ifinfo.txt', ifinfo)
-            node.setFile('/interface_setup', BaseFileTemplates['interface_setup_script'])
-            node.insertStartCommand(0, '/interface_setup')
-            node.insertStartCommand(0, 'chmod +x /interface_setup')
+            node.setFile('/interface_setup.sh', BaseFileTemplates['interface_setup_script'], isExecutable=True)
+            node.insertStartCommand(0, '/interface_setup.sh')
 
     def setNameServers(self, servers: List[str]) -> Base:
         """!
@@ -226,10 +225,10 @@ class Base(Layer, Graphable):
         return out
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set()
+        return []

@@ -3,7 +3,7 @@
 # __author__ = 'Demon'
 
 from __future__ import annotations
-from seedemu.core import Node, NodeSoftware, Emulator, Service, Server
+from seedemu.core import Node, NodeFile, NodeSoftware, Emulator, Service, Server
 from typing import List, Dict, Set
 from enum import Enum
 
@@ -408,18 +408,17 @@ class TorServer(Server):
 
         node.addSoftware(NodeSoftware("git"))
         node.addSoftware(NodeSoftware("python3"))
-        node.addSoftware(NodeSoftware("tor", TOR_INSTALL_SCRIPT))
+        node.addSoftware(NodeSoftware("tor", NodeFile("tor_install.sh", TOR_INSTALL_SCRIPT, isExecutable=True)))
 
         node.setFile("/etc/tor/torrc", TorServerFileTemplates["torrc"])
         node.setFile("/etc/tor/torrc.da", TorServerFileTemplates["torrc.da"])
-        node.setFile("/usr/local/bin/da_fingerprint", TorServerFileTemplates["da_fingerprint"])
-        node.setFile("/usr/local/bin/tor-entrypoint", TorServerFileTemplates["tor-entrypoint"].format(TOR_IP=addr, downloader = download_commands))
+        node.setFile("/usr/local/bin/da_fingerprint", TorServerFileTemplates["da_fingerprint"], isExecutable=True)
+        node.setFile("/usr/local/bin/tor-entrypoint", TorServerFileTemplates["tor-entrypoint"].format(TOR_IP=addr, downloader = download_commands), isExecutable=True)
         
         node.appendStartCommand("export TOR_ORPORT=7000")
         node.appendStartCommand("export TOR_DIRPORT=9030")
         node.appendStartCommand("export TOR_DIR=/tor")
         node.appendStartCommand("export ROLE={}".format(self.__role))
-        node.appendStartCommand("chmod +x /usr/local/bin/tor-entrypoint /usr/local/bin/da_fingerprint")
         node.appendStartCommand("mkdir /tor")
        
         # If node role is DA, launch a python webserver for other node to download fingerprints.
@@ -430,13 +429,13 @@ class TorServer(Server):
         node.appendStartCommand("tor -f /etc/tor/torrc")
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set([NodeSoftware("git"), NodeSoftware("python3"), NodeSoftware("tor", TOR_INSTALL_SCRIPT)])
+        return [[NodeSoftware("git"), NodeSoftware("python3"), NodeSoftware("tor", TOR_INSTALL_SCRIPT)]]
 
 class TorService(Service):
     """!
@@ -496,7 +495,7 @@ class TorService(Service):
         return TorServer()
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

@@ -2,7 +2,7 @@
 # encoding: utf-8
 # __author__ = 'Demon'
 from seedemu.core import Node, NodeSoftware, Service, Server
-from typing import Dict, Set
+from typing import Dict, List
 
 DomainRegistrarServerFileTemplates: Dict[str, str] = {}
 
@@ -185,13 +185,13 @@ class DomainRegistrarServer(Server):
         node.appendStartCommand('service php7.4-fpm start')
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return set([NodeSoftware('nginx-light'), NodeSoftware('php7.4-fpm')])
+        return [[NodeSoftware('nginx-light'), NodeSoftware('php7.4-fpm')]]
 
 
 class DomainRegistrarService(Service):
@@ -214,7 +214,7 @@ class DomainRegistrarService(Service):
         assert "DomainNameService" in node.getAttribute('services') , 'DomainNameService required on node to use DomainRegistrarService.'
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

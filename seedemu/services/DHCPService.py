@@ -1,7 +1,6 @@
 from __future__ import annotations
 from seedemu import *
 from ipaddress import IPv4Address, IPv4Network
-from typing import Set
 
 DHCPServiceFileTemplates: Dict[str, str] = {}
 
@@ -134,13 +133,13 @@ class DHCPServer(Server):
         node.appendStartCommand('/etc/init.d/isc-dhcp-server restart')
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('isc-dhcp-server')}
+        return [NodeSoftware('isc-dhcp-server')]
 
 class DHCPService(Service):
     """!
@@ -166,7 +165,7 @@ class DHCPService(Service):
             server.configure(node, emulator)
     
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

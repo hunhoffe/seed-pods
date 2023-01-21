@@ -416,13 +416,13 @@ class DomainNameServer(Server):
         node.appendStartCommand('service named start')
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return {NodeSoftware('bind9')}
+        return [NodeSoftware('bind9')]
     
 class DomainNameService(Service):
     """!
@@ -574,7 +574,7 @@ class DomainNameService(Service):
         super().render(emulator)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from seedemu.core import Node, NodeSoftware, Service, Server, Emulator, ScopedRegistry
+from seedemu.core import Node, NodeFile, NodeSoftware, Service, Server, Emulator, ScopedRegistry
 from seedemu.layers.Routing import Router
 from typing import Set, Dict
 
@@ -31,14 +31,14 @@ class BgpLookingGlassServer(Server):
     __frontend_port: int
     __proxy_port: int
 
-    __DEFAULT_SOFTWARE = {
+    __DEFAULT_SOFTWARE = [
         # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debain
         NodeSoftware('golang'),
         NodeSoftware('git'),
         NodeSoftware('make'),
-        NodeSoftware('go-bindata', INSTALL_GO_BINDATA_SCRIPT),
-        NodeSoftware('looking-glass', INSTALL_LOOKING_GLASS_SCRIPT)
-    }
+        NodeSoftware('go-bindata', NodeFile('/install_go_bindata.sh', content=INSTALL_GO_BINDATA_SCRIPT, isExecutable=True)),
+        NodeSoftware('looking-glass', NodeFile('/install_lg.sh', content=INSTALL_LOOKING_GLASS_SCRIPT, isExecutable=True))
+    ]
 
     def __init__(self):
         """!
@@ -59,7 +59,7 @@ class BgpLookingGlassServer(Server):
             node.addSoftware(soft)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
@@ -199,7 +199,7 @@ class BgpLookingGlassService(Service):
         return super().configure(emulator)
 
     @property
-    def softwareDeps(cls) -> Set[NodeSoftware]:
+    def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 

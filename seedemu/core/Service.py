@@ -26,6 +26,10 @@ class Server(Printable, NodeSoftwareInstaller, metaclass=ABCMeta):
         raise NotImplementedError('install not implemented')
 
     def getName(self) -> str:
+        """!
+        @brief The name of the server
+        @return the name of the server
+        """
         return self.__class__.__name__
 
     def print(self, indent: int) -> str:
