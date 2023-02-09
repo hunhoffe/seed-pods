@@ -107,7 +107,7 @@ BOTNET_DEFAULT_SOFTWARE = [
     NodeSoftware('g++'),
     NodeSoftware('make'),
     NodeSoftware('python3-pip'),
-    NodeSoftware('byob', NodeFile('byob_install.sh', BotnetServerFileTemplates['byob_install'], isExecutable=True))
+    NodeSoftware('byob', NodeFile('/byob_install.sh', BotnetServerFileTemplates['byob_install'], isExecutable=True))
 ]
 
 class BotnetServer(Server):
@@ -192,7 +192,7 @@ class BotnetServer(Server):
         node.setAttribute('botnet_addr', address)
         node.setAttribute('botnet_port', self.__port + 1)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -295,7 +295,7 @@ class BotnetClientServer(Server):
         # get and run dropper from server.
         node.appendStartCommand('/tmp/byob_client_dropper_runner "{}" "{}"'.format(addr, port), fork)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -319,14 +319,14 @@ class BotnetService(Service):
     def _createServer(self) -> Server:
         return BotnetServer()
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return BotnetServer.softwareDeps
+        return BotnetServer.softwareDeps()
 
 class BotnetClientService(Service):
     """!
@@ -352,11 +352,11 @@ class BotnetClientService(Service):
     def _createServer(self) -> Server:
         return BotnetClientServer()
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return BotnetClientServer.softwareDeps
+        return BotnetClientServer.softwareDeps()

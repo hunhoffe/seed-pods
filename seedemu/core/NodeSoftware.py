@@ -72,11 +72,11 @@ class NodeSoftwareInstaller(metaclass=ABCMeta):
     Implement this abstract class for bookkeeping for software installed on nodes.
     """
 
-    @property
     @abstractmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        Implementors should label functions as classmethods
 
         @returns set of software this component may install on a node.
         """

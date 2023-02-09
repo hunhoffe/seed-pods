@@ -415,7 +415,7 @@ class DomainNameServer(Server):
         node.appendStartCommand('chown -R bind:bind /etc/bind/zones')
         node.appendStartCommand('service named start')
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -573,14 +573,14 @@ class DomainNameService(Service):
 
         super().render(emulator)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return DomainNameServer.softwareDeps
+        return DomainNameServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

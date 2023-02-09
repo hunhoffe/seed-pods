@@ -10,7 +10,7 @@ class ReverseDomainNameServer(Server):
     def install(self, node: Node):
         pass
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -67,12 +67,12 @@ class ReverseDomainNameService(Service):
 
         return super().configure(emulator)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return ReverseDomainNameServer.softwareDeps
+        return ReverseDomainNameServer.softwareDeps()
     

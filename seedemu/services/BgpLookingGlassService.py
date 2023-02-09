@@ -58,7 +58,7 @@ class BgpLookingGlassServer(Server):
         for soft in self.__DEFAULT_SOFTWARE:
             node.addSoftware(soft)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -198,11 +198,11 @@ class BgpLookingGlassService(Service):
         self.__emulator = emulator
         return super().configure(emulator)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return BgpLookingGlassServer.softwareDeps
+        return BgpLookingGlassServer.softwareDeps()

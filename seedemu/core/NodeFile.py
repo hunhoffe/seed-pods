@@ -101,3 +101,10 @@ class NodeFile(Printable):
                 out += line
                 out += '\n'
         return out
+
+    def __eq__(self, obj):
+        return isinstance(obj, NodeFile) and \
+            obj.__path == self.__path and \
+            obj.__is_executable == self.__is_executable and \
+            obj.__host_path == self.__host_path and \
+            obj.__content == self.__content

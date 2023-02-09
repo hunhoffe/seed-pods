@@ -67,7 +67,7 @@ class WebServer(Server):
         node.appendStartCommand('service nginx start')
         node.appendClassName("WebService")
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -91,11 +91,11 @@ class WebService(Service):
     def _createServer(self) -> Server:
         return WebServer()
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return WebServer.softwareDeps
+        return WebServer.softwareDeps()

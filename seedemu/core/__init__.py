@@ -4,7 +4,7 @@ from .InternetExchange import InternetExchange
 from .Network import Network
 from .Node import Node, Interface, Router, RealWorldRouter
 from .NodeFile import NodeFile
-from .NodeSoftware import NodeSoftware
+from .NodeSoftware import NodeSoftware, NodeSoftwareInstaller
 from .Printable import Printable
 from .Registry import Registry, ScopedRegistry, Registrable
 from .Graphable import Graphable, Graph, Vertex, Edge

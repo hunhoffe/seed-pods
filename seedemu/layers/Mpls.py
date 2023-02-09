@@ -211,7 +211,7 @@ class Mpls(Layer, Graphable):
         node.setFile('/frr_start.sh', content=MplsFileTemplates['frr_start_script'], isExecutable=True)
         node.appendStartCommand('/frr_start.sh')
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)

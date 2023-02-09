@@ -184,14 +184,14 @@ class DomainRegistrarServer(Server):
         node.appendStartCommand('service nginx start')
         node.appendStartCommand('service php7.4-fpm start')
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return [[NodeSoftware('nginx-light'), NodeSoftware('php7.4-fpm')]]
+        return [NodeSoftware('nginx-light'), NodeSoftware('php7.4-fpm')]
 
 
 class DomainRegistrarService(Service):
@@ -213,11 +213,11 @@ class DomainRegistrarService(Service):
         # In order to identify if the target node has DomainNameService.
         assert "DomainNameService" in node.getAttribute('services') , 'DomainNameService required on node to use DomainRegistrarService.'
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return DomainRegistrarServer.softwareDeps
+        return DomainRegistrarServer.softwareDeps()

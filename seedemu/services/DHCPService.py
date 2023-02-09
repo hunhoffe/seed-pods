@@ -132,7 +132,7 @@ class DHCPServer(Server):
 
         node.appendStartCommand('/etc/init.d/isc-dhcp-server restart')
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -164,11 +164,11 @@ class DHCPService(Service):
         for (server, node) in targets:
             server.configure(node, emulator)
     
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return DHCPServer.softwareDeps
+        return DHCPServer.softwareDeps()

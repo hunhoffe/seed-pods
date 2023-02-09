@@ -83,7 +83,7 @@ class Routing(Layer):
         """
         node.addSoftware(NodeSoftware("bird", NodeFile('/bird_install.sh', content=RoutingFileTemplates["bird_install"], isExecutable=True)))
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)

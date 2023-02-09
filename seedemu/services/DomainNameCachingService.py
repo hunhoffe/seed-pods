@@ -130,7 +130,7 @@ class DomainNameCachingServer(Server, Configurable):
                 hnode.appendStartCommand('cat /etc/resolv.conf.new > /etc/resolv.conf')
             hnode.appendFile('/etc/resolv.conf.new', 'nameserver {}\n'.format(addr))
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -182,14 +182,14 @@ class DomainNameCachingService(Service):
             for (server, node) in targets:
                 server.setRootServers(root_servers)
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return DomainNameCachingServer.softwareDeps
+        return DomainNameCachingServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

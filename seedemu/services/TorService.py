@@ -250,7 +250,7 @@ TorServerFileTemplates["downloader"] = """
     echo $FINGERPRINT >> /etc/tor/torrc
 """
 
-# TODO(hunhoffe): it does not appear as though TOR_VER is defined??
+# TODO: it does not appear as though TOR_VER is defined??
 TOR_INSTALL_SCRIPT = """\
 #!/bin/bash
 
@@ -261,7 +261,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install $build
 
 mkdir /src
 cd /src
-git clone https://git.torproject.org/tor.git\
+git clone https://git.torproject.org/tor.git
 cd tor
 git checkout ${TOR_VER}
 ./autogen.sh
@@ -408,7 +408,7 @@ class TorServer(Server):
 
         node.addSoftware(NodeSoftware("git"))
         node.addSoftware(NodeSoftware("python3"))
-        node.addSoftware(NodeSoftware("tor", NodeFile("tor_install.sh", TOR_INSTALL_SCRIPT, isExecutable=True)))
+        node.addSoftware(NodeSoftware("tor", NodeFile("./tor_install.sh", TOR_INSTALL_SCRIPT, isExecutable=True)))
 
         node.setFile("/etc/tor/torrc", TorServerFileTemplates["torrc"])
         node.setFile("/etc/tor/torrc.da", TorServerFileTemplates["torrc.da"])
@@ -428,14 +428,14 @@ class TorServer(Server):
         node.appendStartCommand("tor-entrypoint")
         node.appendStartCommand("tor -f /etc/tor/torrc")
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return [[NodeSoftware("git"), NodeSoftware("python3"), NodeSoftware("tor", TOR_INSTALL_SCRIPT)]]
+        return [NodeSoftware("git"), NodeSoftware("python3"), NodeSoftware("tor", NodeFile('./tor_install.sh', TOR_INSTALL_SCRIPT, isExecutable=True))]
 
 class TorService(Service):
     """!
@@ -494,11 +494,11 @@ class TorService(Service):
     def _createServer(self) -> Server:
         return TorServer()
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return TorServer.softwareDeps
+        return TorServer.softwareDeps()

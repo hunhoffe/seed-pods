@@ -220,7 +220,7 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
 
         self.__cur_port += 1
  
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component may install on a node.

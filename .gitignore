@@ -21,5 +21,6 @@ client/frontend/public/fonts
 client/frontend/node_modules
 client/backend/node_modules
 client/backend/bin
+images/output*
 *.bin
 output

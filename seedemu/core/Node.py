@@ -271,7 +271,7 @@ class Node(Printable, Registrable, Configurable, Vertex, NodeSoftwareInstaller):
         for idx, s in enumerate(self.__name_servers, start=1):
             self.insertStartCommand(idx, 'echo "nameserver {}" >> /etc/resolv.conf'.format(s))
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
@@ -956,14 +956,14 @@ class RealWorldRouter(Router):
         self.addTablePipe('t_rw', 't_bgp', exportFilter = 'filter { bgp_large_community.add(LOCAL_COMM); bgp_local_pref = 40; accept; }')
         # self.addTablePipe('t_rw', 't_ospf') # TODO
 
-    @property
+    @classmethod
     def softwareDeps(cls) -> List[NodeSoftware]:
         """!
         @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
 
         @returns set of software this component may install on a node.
         """
-        return super().softwareDeps + [NodeSoftware('iptables')]
+        return [NodeSoftware('iptables')]
 
     def print(self, indent: int) -> str:
         out = super(RealWorldRouter, self).print(indent)
