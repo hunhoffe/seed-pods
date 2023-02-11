@@ -10,7 +10,7 @@ SEED_IMAGES = {
     "seedemu-tor": get_seedemu_tor_image,
 }
 
-def build_image(image_builder, output_dir):
+def build_image(image_builder, image_owner, output_dir):
     # Remove output directory if it already exists
     output_path = Path(output_dir)
     if output_path.exists():
@@ -22,7 +22,7 @@ def build_image(image_builder, output_dir):
     os.chdir(output_dir)
 
     # Create locally, this is so we can push it to docker from here after it's built
-    image = image_builder()
+    image = image_builder(image_owner)
     image.generateImageSetup()
 
     # Restore working direcotry
@@ -30,6 +30,7 @@ def build_image(image_builder, output_dir):
 
 parser = argparse.ArgumentParser("build_image")
 parser.add_argument("image_name", help="The name of the image to build", type=str, choices=SEED_IMAGES.keys())
+parser.add_argument("image_owner", help="The owner of the image (dockerhub user)", type=str, default="handsonsecurity")
 parser.add_argument('-o', "--output_dir", help="Output directory for image files.", type=str, default='output')
 args = parser.parse_args()
-build_image(SEED_IMAGES[args.image_name], args.output_dir)
+build_image(SEED_IMAGES[args.image_name], args.image_owner, args.output_dir)

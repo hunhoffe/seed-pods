@@ -56,7 +56,7 @@ def __get_software_deps(deps_acc, classes_to_check, checked_classes, excluded_cl
 def get_seed_deps(excluded_classes=set()):
     return __get_software_deps([], [NodeSoftwareInstaller], set(), excluded_classes)
 
-def get_seedemu_image() -> DockerImage:
+def get_seedemu_image(image_owner) -> DockerImage:
     excluded_classes = {
         BotnetService, 
         BotnetClientService, 
@@ -72,9 +72,9 @@ def get_seedemu_image() -> DockerImage:
         EthereumService,
         EthereumServer,
     }
-    return DockerImage('hunhoffe/seedemu', get_seed_deps(excluded_classes=excluded_classes), local=True, baseImage=DockerImage('ubuntu:20.04', [], local=True))
+    return DockerImage(image_owner + '/seedemu', get_seed_deps(excluded_classes=excluded_classes), local=True, baseImage=DockerImage('ubuntu:20.04', [], local=True))
 
-def get_seedemu_tor_image() -> DockerImage:
+def get_seedemu_tor_image(image_owner) -> DockerImage:
     torSoftware = __dedupe_software_deps(TorServer.softwareDeps() + TorService.softwareDeps())
-    seedemu_image = get_seedemu_image()
-    return DockerImage('hunhoffe/seedemu-tor', torSoftware, local=True, baseImage=seedemu_image)
+    seedemu_image = get_seedemu_image(image_owner)
+    return DockerImage(image_owner + '/seedemu-tor', torSoftware, local=True, baseImage=seedemu_image)

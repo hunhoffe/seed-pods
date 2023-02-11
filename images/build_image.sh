@@ -2,7 +2,7 @@
 
 NUM_ARGS=1
 # TODO: should be handsonsecurity
-IMAGE_OWNER="hunhoffe"
+IMAGE_OWNER="handsonsecurity"
 IMAGES=("seedemu" "seedemu-tor")
 OUTPUT_DIR="output"
 USAGE="
@@ -23,6 +23,6 @@ if [[ ! " ${IMAGES[*]} " =~ " $1 " ]]; then
     exit -1
 fi
 
-python3 build_image.py $1 -o ${OUTPUT_DIR}_$1
+python3 build_image.py $1 $IMAGE_OWNER -o ${OUTPUT_DIR}_$1
 cd ${OUTPUT_DIR}_$1
 docker build -t $IMAGE_OWNER/$1 .
