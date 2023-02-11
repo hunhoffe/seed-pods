@@ -2,8 +2,8 @@
 
 NUM_ARGS=1
 # TODO: should be handsonsecurity
-IMAGE_OWNER="handsonsecurity"
-IMAGES=("seedemu" "seedemu-tor")
+IMAGE_OWNER="hunhoffe"
+IMAGES=("seedemu" "seedemu-tor" "seedemu-botnet" "seedemu-eth")
 OUTPUT_DIR="output"
 USAGE="
 Usage: ./build_image.sh <image_name>

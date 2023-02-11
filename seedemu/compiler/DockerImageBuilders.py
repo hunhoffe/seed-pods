@@ -78,3 +78,14 @@ def get_seedemu_tor_image(image_owner) -> DockerImage:
     torSoftware = __dedupe_software_deps(TorServer.softwareDeps() + TorService.softwareDeps())
     seedemu_image = get_seedemu_image(image_owner)
     return DockerImage(image_owner + '/seedemu-tor', torSoftware, local=True, baseImage=seedemu_image)
+
+def get_seedemu_botnet_image(image_owner) -> DockerImage:
+    botnetSoftware = __dedupe_software_deps(BotnetServer.softwareDeps() + BotnetService.softwareDeps() + \
+        BotnetClientServer.softwareDeps() + BotnetClientService.softwareDeps())
+    seedemu_image = get_seedemu_image(image_owner)
+    return DockerImage(image_owner + '/seedemu-botnet', botnetSoftware, local=True, baseImage=seedemu_image)
+
+def get_seedemu_eth_image(image_owner) -> DockerImage:
+    ethSoftware = __dedupe_software_deps(EthereumServer.softwareDeps() + EthereumService.softwareDeps())
+    seedemu_image = get_seedemu_image(image_owner)
+    return DockerImage(image_owner + '/seedemu-eth', ethSoftware, local=True, baseImage=seedemu_image)

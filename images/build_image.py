@@ -3,11 +3,13 @@ import argparse
 import os
 from pathlib import Path
 import shutil
-from seedemu import get_seedemu_image, get_seedemu_tor_image
+from seedemu import get_seedemu_image, get_seedemu_tor_image, get_seedemu_botnet_image, get_seedemu_eth_image
 
 SEED_IMAGES = {
     "seedemu": get_seedemu_image,
     "seedemu-tor": get_seedemu_tor_image,
+    "seedemu-botnet": get_seedemu_botnet_image,
+    "seedemu-eth": get_seedemu_eth_image,
 }
 
 def build_image(image_builder, image_owner, output_dir):
