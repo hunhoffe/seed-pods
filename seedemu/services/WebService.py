@@ -1,6 +1,6 @@
 from __future__ import annotations
-from seedemu.core import Node, Service, Server
-from typing import Dict
+from seedemu.core import Node, NodeSoftware, Service, Server
+from typing import Dict, Set
 
 WebServerFileTemplates: Dict[str, str] = {}
 
@@ -63,12 +63,20 @@ class WebServer(Server):
         """!
         @brief Install the service.
         """
-        node.addSoftware('nginx-light')
+        node.addSoftware(NodeSoftware('nginx-light'))
         node.setFile('/var/www/html/index.html', self.__index.format(asn = node.getAsn(), nodeName = node.getName()))
         node.setFile('/etc/nginx/sites-available/default', WebServerFileTemplates['nginx_site'].format(port = self.__port))
         node.appendStartCommand('service nginx start')
         node.appendClassName("WebService")
         
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('nginx-light')}
+
     def print(self, indent: int) -> str:
         out = ' ' * indent
         out += 'Web server object.\n'
@@ -92,6 +100,15 @@ class WebService(Service):
 
     def getName(self) -> str:
         return 'WebService'
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        return out
+        @returns set of software this component may install on a node.
+        """
+        return WebServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from .DomainNameService import DomainNameService
 from seedemu.core import Node, Network, Emulator, Service, Server
-from typing import List, Tuple
+from typing import List, Tuple, Set
 from ipaddress import IPv4Network
 
 class CymruIpOriginServer(Server):
@@ -11,6 +11,14 @@ class CymruIpOriginServer(Server):
 
     def install(self, node: Node):
         pass
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set()
 
 class CymruIpOriginService(Service):
     """!
@@ -138,6 +146,15 @@ class CymruIpOriginService(Service):
             zone.addRecord(record)
 
         return super().configure(emulator)        
+
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

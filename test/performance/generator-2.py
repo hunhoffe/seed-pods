@@ -61,8 +61,8 @@ def createEmulation(asCount: int, chainLength: int) -> Emulator:
         hostA.joinNetwork(nets[0].getName(), addressA)
         hostB.joinNetwork(nets[-1].getName(), addressB)
 
-        hostA.addSoftware('iperf3')
-        hostB.addSoftware('iperf3')
+        hostA.addSoftware(NodeSoftware('iperf3'))
+        hostB.addSoftware(NodeSoftware('iperf3'))
 
         hostA.appendStartCommand('sysctl -w net.ipv4.ip_default_ttl=255')
         hostB.appendStartCommand('sysctl -w net.ipv4.ip_default_ttl=255')

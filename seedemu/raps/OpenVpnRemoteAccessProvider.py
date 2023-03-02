@@ -1,6 +1,6 @@
-from seedemu.core import RemoteAccessProvider, Emulator, Network, Node
+from seedemu.core import RemoteAccessProvider, Emulator, Network, Node, NodeSoftware
 from seedemu.core.enums import NodeRole
-from typing import Dict
+from typing import Dict, Set
 from itertools import repeat
 
 OpenVpnRapFileTemplates: Dict[str, str] = {}
@@ -194,8 +194,8 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
     def configureRemoteAccess(self, emulator: Emulator, netObject: Network, brNode: Node, brNet: Network):
         self._log('setting up OpenVPN remote access for {} in AS{}...'.format(netObject.getName(), brNode.getAsn()))
 
-        brNode.addSoftware('openvpn')
-        brNode.addSoftware('bridge-utils')
+        brNode.addSoftware(NodeSoftware('openvpn'))
+        brNode.addSoftware(NodeSoftware('bridge-utils'))
 
         addrstart = addrend = netObject.assign(NodeRole.Host)
         for i in repeat(None, self.__naddrs - 1): addrend = netObject.assign(NodeRole.Host)
@@ -209,10 +209,9 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
             cert = self.__ovpn_cert if self.__ovpn_cert != None else OpenVpnRapFileTemplates['ovpn_cert']
         ))
 
-        brNode.setFile('/ovpn_startup', OpenVpnRapFileTemplates['ovpn_startup_script'])
+        brNode.setFile('/ovpn_startup', OpenVpnRapFileTemplates['ovpn_startup_script'], isExecutable=True)
 
         # note: ovpn_startup will invoke interface_setup, and replace interface_setup script with a dummy. 
-        brNode.appendStartCommand('chmod +x /ovpn_startup')
         brNode.appendStartCommand('/ovpn_startup {}'.format(netObject.getName()))
 
         brNode.appendStartCommand('ip route add default via {} dev {}'.format(brNet.getPrefix()[1], brNet.getName()))
@@ -223,3 +222,12 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
         brNode.addPort(self.__cur_port, 1194, 'udp')
 
         self.__cur_port += 1
+
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component may install on a node.
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('openvpn'), NodeSoftware('bridge-utils')}

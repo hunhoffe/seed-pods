@@ -141,7 +141,14 @@ class Ibgp(Layer, Graphable):
                 a = rtrs.pop()
                 for b in rtrs:
                     ibgpgraph.addEdge('Router: {}'.format(a.getName()), 'Router: {}'.format(b.getName()), style = 'solid')
-            
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

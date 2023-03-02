@@ -1,5 +1,5 @@
-from seedemu.core import ScopedRegistry, Node, Interface, Network, Emulator, Layer, Router, RealWorldRouter
-from typing import List, Dict
+from seedemu.core import ScopedRegistry, Node, NodeFile, NodeSoftware, Interface, Network, Emulator, Layer, Router, RealWorldRouter
+from typing import List, Dict, Set
 from ipaddress import IPv4Network
 
 RoutingFileTemplates: Dict[str, str] = {}
@@ -36,6 +36,13 @@ RoutingFileTemplates['rnode_bird_direct'] = """
 {interfaces}
 """
 
+RoutingFileTemplates["bird_install"] = """\
+#!/bin/bash
+mkdir -p /usr/share/doc/bird2/examples/
+touch /usr/share/doc/bird2/examples/bird.conf
+apt-get update && apt-get install -y --no-install-recommends bird2
+[ ! -d /run/bird ] && mkdir /run/bird
+"""
 
 class Routing(Layer):
     """!
@@ -75,9 +82,7 @@ class Routing(Layer):
         """!
         @brief Install bird on node, and handle the bug.
         """
-        node.addBuildCommand('mkdir -p /usr/share/doc/bird2/examples/')
-        node.addBuildCommand('touch /usr/share/doc/bird2/examples/bird.conf')
-        node.addBuildCommand('apt-get update && apt-get install -y --no-install-recommends bird2')
+        node.addSoftware(NodeSoftware("bird", NodeFile('/bird_install.sh', RoutingFileTemplates["bird_install"], isExecutable=True)))
 
     def configure(self, emulator: Emulator):
         reg = emulator.getRegistry()
@@ -172,6 +177,14 @@ class Routing(Layer):
                 self._log("Setting default route for host {} ({}) to router {}".format(name, hif.getAddress(), rif.getAddress()))
                 hnode.appendStartCommand('ip rou del default 2> /dev/null')
                 hnode.appendStartCommand('ip route add default via {} dev {}'.format(rif.getAddress(), rif.getNet().getName()))
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware("bird", NodeFile('/bird_install.sh', content=RoutingFileTemplates["bird_install"], isExecutable=True))}
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

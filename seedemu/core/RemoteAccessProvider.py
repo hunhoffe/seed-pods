@@ -1,7 +1,8 @@
 from __future__ import annotations
 from sys import stderr
+from .NodeSoftware import NodeSoftwareInstaller
 
-class RemoteAccessProvider(object):
+class RemoteAccessProvider(NodeSoftwareInstaller):
     """!
     @brief Implements logic for provide remote access to emulated network.
     """

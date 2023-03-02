@@ -4,7 +4,7 @@ from .EthEnum import ConsensusMechanism, EthUnit
 from .EthUtil import Genesis, EthAccount, AccountStructure
 from .EthereumServer import EthereumServer, PoAServer, PoWServer, PoSServer
 from os import mkdir, path, makedirs, rename
-from seedemu.core import Node, Service, Server, Emulator
+from seedemu.core import Node, NodeSoftware, Service, Server, Emulator
 from typing import Dict, List
 from sys import stderr
 
@@ -536,6 +536,14 @@ class EthereumService(Service):
         blockchain = Blockchain(self, chainName, chainId, consensus)
         self.__blockchains[chainName] = blockchain
         return blockchain
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return EthereumServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

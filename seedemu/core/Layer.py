@@ -4,13 +4,15 @@ from .Printable import Printable
 from .Registry import Registrable
 from .Emulator import Emulator
 from .Configurable import Configurable
+from .NodeSoftware import NodeSoftwareInstaller
 from .Merger import Mergeable
 
+from abc import ABCMeta
 from sys import stderr
 from typing import Set, Dict, Tuple
 
 
-class Layer(Printable, Registrable, Configurable, Mergeable):
+class Layer(Printable, Registrable, Configurable, Mergeable, NodeSoftwareInstaller, metaclass=ABCMeta):
     """!
     @brief The layer interface.
     """

@@ -3,9 +3,8 @@
 
 from seedemu.layers import Base, Routing, Ebgp
 from seedemu.services import WebService
-from seedemu.compiler import Docker
+from seedemu.compiler import Docker, get_seedemu_image
 from seedemu.core import Emulator, Binding, Filter
-
 
 # Initialize the emulator and layers
 emu     = Emulator()
@@ -87,4 +86,6 @@ emu.render()
 ###############################################################################
 # Compilation
 
-emu.compile(Docker(), './output')
+compiler = Docker()
+compiler.addImage(get_seedemu_image('hunhoffe').setLocal(False))
+emu.compile(compiler, './output')

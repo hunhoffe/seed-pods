@@ -1,8 +1,8 @@
 from __future__ import annotations
-from seedemu.core import Node, Server, BaseSystem
+from seedemu.core import Node, NodeFile, NodeSoftware, Server, BaseSystem
 from .EthEnum import *
 from .EthUtil import *
-from typing import List
+from typing import List, Set
 from seedemu.services.EthereumService import *
 from .EthTemplates import EthServerFileTemplates, GethCommandTemplates
 from .EthTemplates.LighthouseCommandTemplates import *
@@ -146,15 +146,14 @@ class EthereumServer(Server):
         node.setFile('/tmp/eth-password', '\n'.join(account_passwords))
 
         # install required software
-        node.addSoftware('software-properties-common')
+        node.addSoftware(NodeSoftware('software-properties-common'))
         # tap the eth repo
         # node.addBuildCommand('add-apt-repository ppa:ethereum/ethereum')
 
         # install geth and bootnode
         if self._custom_geth_binary_path : 
             #node.addBuildCommand('apt-get update && apt-get install --yes bootnode')
-            node.importFile("../../"+self._custom_geth_binary_path, '/usr/bin/geth')
-            node.appendStartCommand("chmod +x /usr/bin/geth")
+            node.setFile('/usr/bin/geth', hostPath="../../"+self._custom_geth_binary_path, isExecutable=True)
         # else:
         #     node.addBuildCommand('apt-get update && apt-get install --yes geth bootnode')
 
@@ -179,10 +178,9 @@ class EthereumServer(Server):
         if len(bootnodes) > 0 :
             node.setFile('/tmp/eth-nodes', '\n'.join(bootnodes))
             
-            node.setFile('/tmp/eth-bootstrapper', EthServerFileTemplates['bootstrapper'])
+            node.setFile('/tmp/eth-bootstrapper', EthServerFileTemplates['bootstrapper'], isExecutable=True)
 
             # load enode urls from other nodes
-            node.appendStartCommand('chmod +x /tmp/eth-bootstrapper')
             node.appendStartCommand('/tmp/eth-bootstrapper')
 
         # launch Ethereum process.
@@ -483,6 +481,13 @@ class EthereumServer(Server):
     def getBlockchain(self):
         return self._blockchain
 
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('software-properties-common')}
 
 class PoAServer(EthereumServer):
     def __init__(self, id: int, blockchain: Blockchain):
@@ -576,8 +581,7 @@ class PoSServer(PoAServer):
             node.setFile('/tmp/seed.pass', 'seedseedseed')
             wallet_create_command = LIGHTHOUSE_WALLET_CREATE_CMD.format(eth_id=self.getId())
             validator_create_command = LIGHTHOUSE_VALIDATOR_CREATE_CMD.format(eth_id=self.getId()) 
-            node.setFile('/tmp/deposit.sh', VALIDATOR_DEPOSIT_SH.format(eth_id=self.getId()))
-            node.appendStartCommand('chmod +x /tmp/deposit.sh')
+            node.setFile('/tmp/deposit.sh', VALIDATOR_DEPOSIT_SH.format(eth_id=self.getId()), isExecutable=True)
             if not self.__is_manual_deposit_for_validator:
                 validator_deposit_sh = "/tmp/deposit.sh"
         if self.__is_beacon_validator_at_genesis or self.__is_beacon_validator_at_running:
@@ -594,10 +598,8 @@ class PoSServer(PoAServer):
                                 wallet_create_command=wallet_create_command,
                                 validator_create_command=validator_create_command,
                                 validator_deposit_sh=validator_deposit_sh
-                    ))
+                    ), isExecutable=True)
         node.setFile('/tmp/jwt.hex', '0xae7177335e3d4222160e08cecac0ace2cecce3dc3910baada14e26b11d2009fc')
-        
-        node.appendStartCommand('chmod +x /tmp/beacon-bootstrapper')
         node.appendStartCommand('/tmp/beacon-bootstrapper')
 
     def install(self, node: Node, eth: EthereumService):
@@ -757,6 +759,16 @@ while true; do {{
     
     __beacon_setup_http_port: int
 
+    __software_deps: List[NodeSoftware] = [
+        NodeSoftware('software-properties-common'),
+        NodeSoftware('python3'),
+        NodeSoftware('python3-pip'),
+        NodeSoftware('pip3-web3', installScript=NodeFile('/pip3-web3', '''\
+#!/bin/bash
+pip install web3
+''', isExecutable=True)),
+    ]
+
     def __init__(self, ttd:int, consensus:ConsensusMechanism = ConsensusMechanism.POA):
         """!
         @brief BeaconSetupServer constructor.
@@ -776,9 +788,9 @@ while true; do {{
 
         bootnode_ip = blockchain.getBootNodes()[0].split(":")[0]
         miner_ip = blockchain.getMinerNodes()[0]
-        
-        node.addBuildCommand('apt-get update && apt-get install -y --no-install-recommends software-properties-common python3 python3-pip')
-        node.addBuildCommand('pip install web3')
+       
+        for soft in self.__software_deps:
+            node.addSoftware(soft)
         node.appendStartCommand('lcli generate-bootnode-enr --ip {} --udp-port 30305 --tcp-port 30305 --genesis-fork-version 0x42424242 --output-dir /local-testnet/bootnode'.format(bootnode_ip))
         node.setFile("/tmp/config.yaml", self.BEACON_GENESIS.format(terminal_total_difficulty=self.__terminal_total_difficulty, chain_id=blockchain.getChainId(), 
                                                                     target_committee_size=blockchain.getTargetCommitteeSize(), 
@@ -796,8 +808,7 @@ while true; do {{
         node.appendStartCommand('''echo 'MIN_GENESIS_TIME: "'$GENESIS_TIME'"' >> /local-testnet/testnet/config.yaml''')
         node.appendStartCommand('''echo '3' > /local-testnet/testnet/deploy_block.txt''')
         node.appendStartCommand('''lcli interop-genesis --spec mainnet --genesis-time $GENESIS_TIME --testnet-dir /local-testnet/testnet {validator_count}'''.format(validator_count = validator_counts))
-        node.setFile("/tmp/prepare_resource.sh", self.PREPARE_RESOURCE_TO_SEND)
-        node.appendStartCommand("chmod +x /tmp/prepare_resource.sh")
+        node.setFile("/tmp/prepare_resource.sh", self.PREPARE_RESOURCE_TO_SEND, isExecutable=True)
         node.appendStartCommand("/tmp/prepare_resource.sh")
         node.setFile('/local-testnet/beacon_bootnode_http_server.py', self.BEACON_BOOTNODE_HTTP_SERVER.format(beacon_bootnode_http_port=self.__beacon_setup_http_port))
         node.appendStartCommand('python3 /local-testnet/beacon_bootnode_http_server.py', True)
@@ -808,6 +819,14 @@ while true; do {{
     def setBeaconSetupHttpPort(self, port:int) -> BeaconSetupServer:
         self.__beacon_setup_http_port = port
         return self
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set(self.__software_deps)
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

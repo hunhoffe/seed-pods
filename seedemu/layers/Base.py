@@ -1,6 +1,6 @@
 from __future__ import annotations
-from seedemu.core import AutonomousSystem, InternetExchange, AddressAssignmentConstraint, Node, Graphable, Emulator, Layer
-from typing import Dict, List
+from seedemu.core import AutonomousSystem, InternetExchange, AddressAssignmentConstraint, Node, NodeFile, Graphable, Emulator, Layer
+from typing import Dict, List, Set
 
 BaseFileTemplates: Dict[str, str] = {}
 
@@ -84,9 +84,8 @@ class Base(Layer, Graphable):
                 ifinfo += '{}:{}:{}:{}:{}\n'.format(net.getName(), net.getPrefix(), l, b, d)
 
             node.setFile('/ifinfo.txt', ifinfo)
-            node.setFile('/interface_setup', BaseFileTemplates['interface_setup_script'])
+            node.setFile('/interface_setup', BaseFileTemplates['interface_setup_script'], isExecutable=True)
             node.insertStartCommand(0, '/interface_setup')
-            node.insertStartCommand(0, 'chmod +x /interface_setup')
 
     def setNameServers(self, servers: List[str]) -> Base:
         """!
@@ -215,6 +214,14 @@ class Base(Layer, Graphable):
             asobj.createGraphs(emulator)
             asgraph = asobj.getGraph('AS{}: Layer 2 Connections'.format(asobj.getAsn()))
             graph.copy(asgraph)
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

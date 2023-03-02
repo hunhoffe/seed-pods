@@ -54,11 +54,11 @@ as151.createHost('host1').joinNetwork('net0', address = '10.151.0.80')
 
 # Install additional software on a host
 host0 = as151.getHost('host0')
-host0.addSoftware('telnetd').addSoftware('telnet')
+host0.addSoftware(NodeSoftware('telnetd')).addSoftware(NodeSoftware('telnet'))
 
 # Run an additional command inside the container 
 # The command creates a new account inside the host (also sets its password)
-host0.addBuildCommand('useradd -m -s /bin/bash seed && echo "seed:dees" | chpasswd')
+host0.appendStartCommand('useradd -m -s /bin/bash seed && echo "seed:dees" | chpasswd')
 
 ###############################################################################
 # Create and set up the stub AS (AS-152)
@@ -72,7 +72,7 @@ as152.createHost('host1').joinNetwork('net0')
 as152.createHost('host2').joinNetwork('net0')
 
 # Install additional software on a host
-as152.getHost('host0').addSoftware('telnet')
+as152.getHost('host0').addSoftware(NodeSoftware('telnet'))
 
 ###############################################################################
 # Create and set up the stub AS (AS-153)
@@ -82,7 +82,7 @@ Makers.makeStubAs(emu, base, 153, 101, [None, None])
 
 # Further customization
 as153 = base.getAutonomousSystem(153)
-as153.getHost('host_1').addSoftware('telnet')
+as153.getHost('host_1').addSoftware(NodeSoftware('telnet'))
 
 
 ###############################################################################

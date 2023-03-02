@@ -80,7 +80,7 @@ class DHCPServer(Server):
         @brief Install the service
         """
 
-        node.addSoftware('isc-dhcp-server')
+        node.addSoftware(NodeSoftware('isc-dhcp-server'))
 
         ifaces = self.__node.getInterfaces()
         assert len(ifaces) > 0, 'node {} has no interfaces'.format(node.getName())
@@ -133,6 +133,13 @@ class DHCPServer(Server):
 
         node.appendStartCommand('/etc/init.d/isc-dhcp-server restart')
 
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('isc-dhcp-server')}
     
     def print(self, indent: int) -> str:
         out = ' ' * indent
@@ -165,6 +172,14 @@ class DHCPService(Service):
 
     def getName(self) -> str:
         return 'DHCPService'
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return DHCPServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

@@ -500,6 +500,13 @@ class Ebgp(Layer, Graphable):
                 if a.name == b.name:
                     full_graph.addEdge(a.name, b.name, a.group, b.group, style = 'dotted', alabel = 'I', blabel= 'I')
 
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

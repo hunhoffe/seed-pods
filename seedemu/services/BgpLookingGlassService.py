@@ -1,9 +1,17 @@
 from __future__ import annotations
-from seedemu.core import Node, Service, Server, Emulator, ScopedRegistry
+from seedemu.core import Node, NodeFile, NodeSoftware, Service, Server, Emulator, ScopedRegistry
 from seedemu.layers.Routing import Router
 from typing import Set, Dict
 
 BIRDCTRL='/run/bird/bird.ctl'
+
+INSTALL_LOOKING_GLASS_SCRIPT = '''\
+#!/bin/bash
+git clone https://github.com/xddxdd/bird-lg-go /lg
+curl -Lo /bin/go-bindata https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-linux-amd64
+chmod +x /bin/go-bindata
+make -C /lg
+'''
 
 class BgpLookingGlassServer(Server):
     """!
@@ -16,6 +24,14 @@ class BgpLookingGlassServer(Server):
     __sim: Emulator
     __frontend_port: int
     __proxy_port: int
+
+    __DEFAULT_SOFTWARE = [
+        # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debian
+        NodeSoftware('golang'),
+        NodeSoftware('git'),
+        NodeSoftware('make'),
+        NodeSoftware('looking-glass', NodeFile('/install_lg.sh', INSTALL_LOOKING_GLASS_SCRIPT, isExecutable=True)),
+    ]
 
     def __init__(self):
         """!
@@ -32,15 +48,8 @@ class BgpLookingGlassServer(Server):
 
         @param node node.
         """
-
-        # note: need golang 1.12+; ubuntu defaults to 1.13. need attention if using debian
-        node.addSoftware('golang')
-        node.addSoftware('git')
-        node.addSoftware('make')
-        node.addBuildCommand('git clone https://github.com/xddxdd/bird-lg-go /lg')
-        node.addBuildCommand('curl -Lo /bin/go-bindata https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-linux-amd64')
-        node.addBuildCommand('chmod +x /bin/go-bindata')
-        node.addBuildCommand('make -C /lg')
+        for soft in self__DEFAULT_SOFTWARE:
+            node.addSoftware(soft)
 
     def setFrontendPort(self, port: int) -> BgpLookingGlassServer:
         """!
@@ -151,6 +160,14 @@ class BgpLookingGlassServer(Server):
             asn, ','.join(routers.keys()), self.__proxy_port, self.__frontend_port, 'AS{} looking glass'.format(asn), 'AS{} looking glass'.format(asn)
         ))
 
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return set(cls.__DEFAULT_SOFTWARE)
+
 class BgpLookingGlassService(Service):
     """!
     @brief the BGP looking glass service.
@@ -175,6 +192,15 @@ class BgpLookingGlassService(Service):
 
     def getName(self) -> str:
         return 'BgpLookingGlassService'
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return BgpLookingGlassServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

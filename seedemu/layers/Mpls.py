@@ -2,7 +2,7 @@ from __future__ import annotations
 from .Ospf import Ospf
 from .Ibgp import Ibgp
 from .Routing import Router
-from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer
+from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer, NodeSoftware
 from seedemu.core.enums import NetworkType, NodeRole
 from typing import List, Tuple, Dict, Set
 
@@ -188,7 +188,7 @@ class Mpls(Layer, Graphable):
         self._log('Setting up LDP and OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
 
         node.setPrivileged(True)
-        node.addSoftware('frr')
+        node.addSoftware(NodeSoftware('frr'))
 
         ospf_ifaces = ''
         ldp_ifaces = ''
@@ -210,9 +210,8 @@ class Mpls(Layer, Graphable):
             ldpInterfaces = ldp_ifaces
         ))
 
-        node.setFile('/frr_start', MplsFileTemplates['frr_start_script'])
+        node.setFile('/frr_start', MplsFileTemplates['frr_start_script'], isExecutable=True)
         node.setFile('/mpls_ifaces.txt', '\n'.join(mpls_iface_list))
-        node.appendStartCommand('chmod +x /frr_start')
         node.appendStartCommand('/frr_start')
 
     def __setUpIbgpMesh(self, nodes: List[Router]):
@@ -284,6 +283,14 @@ class Mpls(Layer, Graphable):
                 a = enodes.pop()
                 for b in enodes:
                     mplsgraph.addEdge('Router: {}'.format(a.getName()), 'Router: {}'.format(b.getName()), style = 'solid')
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('frr')}
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

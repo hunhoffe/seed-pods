@@ -1,8 +1,8 @@
 from __future__ import annotations
 from seedemu.core import Configurable, Service, Server
-from seedemu.core import Node, ScopedRegistry, Emulator
+from seedemu.core import Node, NodeSoftware, ScopedRegistry, Emulator
 from .DomainNameService import DomainNameService
-from typing import List, Dict
+from typing import List, Dict, Set
 
 DomainNameCachingServiceFileTemplates: Dict[str, str] = {}
 
@@ -94,7 +94,7 @@ class DomainNameCachingServer(Server, Configurable):
         self.__emulator = emulator
 
     def install(self, node: Node):
-        node.addSoftware('bind9')
+        node.addSoftware(NodeSoftware('bind9'))
         node.setFile('/etc/bind/named.conf.options', DomainNameCachingServiceFileTemplates['named_options'])
         node.setFile('/etc/bind/named.conf.local','')
         if len(self.__root_servers) > 0:
@@ -130,6 +130,15 @@ class DomainNameCachingServer(Server, Configurable):
             if 'cat /etc/resolv.conf.new > /etc/resolv.conf' not in hnode.getStartCommands():
                 hnode.appendStartCommand('cat /etc/resolv.conf.new > /etc/resolv.conf')
             hnode.appendFile('/etc/resolv.conf.new', 'nameserver {}\n'.format(addr))
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('bind9')}
+
 
 class DomainNameCachingService(Service):
     """!
@@ -176,6 +185,14 @@ class DomainNameCachingService(Service):
             root_servers = root_zone.getGuleRecords()
             for (server, node) in targets:
                 server.setRootServers(root_servers)
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return DomainNameCachingServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

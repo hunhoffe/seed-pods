@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # __author__ = 'Demon'
-from seedemu.core import Node, Service, Server
-from typing import Dict
+from seedemu.core import Node, NodeSoftware, Service, Server
+from typing import Dict, Set
 
 DomainRegistrarServerFileTemplates: Dict[str, str] = {}
 
@@ -178,12 +178,22 @@ class DomainRegistrarServer(Server):
         """!
         @brief Install the service.
         """
-        node.addSoftware('nginx-light php7.4-fpm') # Install nginx and php
+        # Install nginx and php
+        node.addSoftware(NodeSoftware('nginx-light'))
+        node.addSoftware(NodeSoftware('php7.4-fpm'))
         node.setFile('/var/www/html/index.php', DomainRegistrarServerFileTemplates['web_app_file']) #index page for domain register service
         node.setFile('/var/www/html/domain.php', DomainRegistrarServerFileTemplates['web_app_file2']) # domain names register page.
         node.setFile('/etc/nginx/sites-available/default', DomainRegistrarServerFileTemplates['nginx_site'].format(port = self.__port)) # setup nginx
         node.appendStartCommand('service nginx start')
         node.appendStartCommand('service php7.4-fpm start')
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('nginx-light'), NodeSoftware('php7.4-fpm')}
 
     def print(self, indent: int) -> str:
         out = ' ' * indent
@@ -212,6 +222,15 @@ class DomainRegistrarService(Service):
     def _doConfigure(self, node: Node, server: Server):
         # In order to identify if the target node has DomainNameService.
         assert "DomainNameService" in node.getAttribute('services') , 'DomainNameService required on node to use DomainRegistrarService.'
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+
+        @returns set of software this component may install on a node.
+        """
+        return DomainRegistrarServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

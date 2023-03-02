@@ -1,14 +1,16 @@
 from __future__ import annotations
+from abc import ABCMeta
 from .Layer import Layer
 from .Node import Node
 from .Printable import Printable
 from .Emulator import Emulator
+from .NodeSoftware import NodeSoftwareInstaller
 from .enums import NodeRole
 from .Binding import Binding
 from typing import Dict, List, Set, Tuple
 from .BaseSystem import BaseSystem
 
-class Server(Printable):
+class Server(Printable, NodeSoftwareInstaller, metaclass=ABCMeta):
     """!
     @brief Server class.
 

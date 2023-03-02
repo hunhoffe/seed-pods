@@ -3,7 +3,7 @@
 # __author__ = 'Demon'
 
 from __future__ import annotations
-from seedemu.core import Node, Emulator, Service, Server
+from seedemu.core import Node, NodeFile, NodeSoftware, Emulator, Service, Server
 from typing import List, Dict, Set
 from enum import Enum
 
@@ -250,27 +250,26 @@ TorServerFileTemplates["downloader"] = """
     echo $FINGERPRINT >> /etc/tor/torrc
 """
 
-BUILD_COMMANDS = """build_temps="build-essential automake" && \
-    build_deps="libssl-dev zlib1g-dev libevent-dev ca-certificates\
-        dh-apparmor libseccomp-dev dh-systemd \
-        git" && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install $build_deps $build_temps \
-        init-system-helpers \
-        pwgen && \
-    mkdir /src && \
-    cd /src && \
-    git clone https://git.torproject.org/tor.git && \
-    cd tor && \
-    git checkout ${TOR_VER} && \
-    ./autogen.sh && \
-    ./configure --disable-asciidoc && \
-    make && \
-    make install && \
-    apt-get -y purge --auto-remove $build_temps && \
-    apt-get clean && rm -r /var/lib/apt/lists/* && \
-    rm -rf /src/*
-"""
+BUILD_SCRIPT = """\
+#!/bin/bash
 
+build_temps="build-essential automake"
+
+DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install $build_temps init-system-helpers pwgen
+
+mkdir /src && cd /src
+git clone https://git.torproject.org/tor.git
+cd tor
+git checkout ${TOR_VER}
+./autogen.sh
+./configure --disable-asciidoc
+make
+make install
+apt-get -y purge --auto-remove $build_temps
+apt-get clean
+rm -r /var/lib/apt/lists/*
+rm -rf /src/*
+"""
 
 class TorNodeType(Enum):
     """!
@@ -300,6 +299,19 @@ class TorServer(Server):
 
     __role: TorNodeType
     __hs_link: Set
+
+    __software_deps = [
+        NodeSoftware("git"),
+        NodeSoftware("python3"),
+        NodeSoftware("libssl-dev"),
+        NodeSoftware("zlib1g-dev"),
+        NodeSoftware("libevent-dev"),
+        NodeSoftware("ca-certificates"),
+        NodeSoftware("dh-apparmor"),
+        NodeSoftware("libseccomp-dev"),
+        NodeSoftware("dh-systemd"),
+        NodeSoftware("tor", NodeFile('/tor_install.sh', BUILD_SCRIPT, isExecutable=True))
+    ]
 
     def __init__(self):
         """!
@@ -405,19 +417,18 @@ class TorServer(Server):
         for dir in tor.getDirAuthority():
             download_commands += TorServerFileTemplates["downloader"].format(da_addr=dir)
 
-        node.addSoftware("git python3")
-        node.addBuildCommand(BUILD_COMMANDS)
+        for soft in self.__software_deps:
+            node.addSoftware(soft)
 
         node.setFile("/etc/tor/torrc", TorServerFileTemplates["torrc"])
         node.setFile("/etc/tor/torrc.da", TorServerFileTemplates["torrc.da"])
-        node.setFile("/usr/local/bin/da_fingerprint", TorServerFileTemplates["da_fingerprint"])
-        node.setFile("/usr/local/bin/tor-entrypoint", TorServerFileTemplates["tor-entrypoint"].format(TOR_IP=addr, downloader = download_commands))
+        node.setFile("/usr/local/bin/da_fingerprint", TorServerFileTemplates["da_fingerprint"], isExecutable=True)
+        node.setFile("/usr/local/bin/tor-entrypoint", TorServerFileTemplates["tor-entrypoint"].format(TOR_IP=addr, downloader = download_commands), isExecutable=True)
         
         node.appendStartCommand("export TOR_ORPORT=7000")
         node.appendStartCommand("export TOR_DIRPORT=9030")
         node.appendStartCommand("export TOR_DIR=/tor")
         node.appendStartCommand("export ROLE={}".format(self.__role))
-        node.appendStartCommand("chmod +x /usr/local/bin/tor-entrypoint /usr/local/bin/da_fingerprint")
         node.appendStartCommand("mkdir /tor")
        
         # If node role is DA, launch a python web server for other node to download fingerprints.
@@ -432,6 +443,14 @@ class TorServer(Server):
         out += 'TorServer'
 
         return out
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        return out
+        @returns set of software this component may install on a node.
+        """
+        return set(cls.__software_deps)
 
 class TorService(Service):
     """!
@@ -492,3 +511,11 @@ class TorService(Service):
 
     def _createServer(self) -> Server:
         return TorServer()
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return TorServer.softwareDeps()

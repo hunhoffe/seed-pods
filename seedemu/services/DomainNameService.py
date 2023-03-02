@@ -1,5 +1,5 @@
 from __future__ import annotations
-from seedemu.core import Node, Printable, Emulator, Service, Server
+from seedemu.core import Node, NodeSoftware, Printable, Emulator, Service, Server
 from seedemu.core.enums import NetworkType
 from typing import List, Dict, Tuple, Set
 from re import sub
@@ -385,7 +385,7 @@ class DomainNameServer(Server):
         """
         assert node == self.__node, 'configured node differs from install node. Please check if there are conflict bindings'
 
-        node.addSoftware('bind9')
+        node.addSoftware(NodeSoftware('bind9'))
         node.appendStartCommand('echo "include \\"/etc/bind/named.conf.zones\\";" >> /etc/bind/named.conf.local')
         node.setFile('/etc/bind/named.conf.options', DomainNameServiceFileTemplates['named_options'])
         node.setFile('/etc/bind/named.conf.zones', '')
@@ -416,7 +416,15 @@ class DomainNameServer(Server):
 
         node.appendStartCommand('chown -R bind:bind /etc/bind/zones')
         node.appendStartCommand('service named start')
-    
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return {NodeSoftware('bind9')}
+
 class DomainNameService(Service):
     """!
     @brief The domain name service.
@@ -568,6 +576,14 @@ class DomainNameService(Service):
             self.__autoNameServer(self.__rootZone)
 
         super().render(emulator)
+
+    @classmethod
+    def softwareDeps(cls) -> Set[NodeSoftware]:
+        """!
+        @brief get the set of ALL software this component is dependent on (i.e., may install on a node.)
+        @returns set of software this component may install on a node.
+        """
+        return DomainNameServer.softwareDeps()
 
     def print(self, indent: int) -> str:
         out = ' ' * indent

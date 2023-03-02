@@ -1,24 +1,19 @@
 from __future__ import annotations
 from seedemu.core.Emulator import Emulator
-from seedemu.core import Node, Network, Compiler, BaseSystem
+from seedemu.core import Node, NodeFile, NodeSoftware, Network, Compiler, BaseSystem
 from seedemu.core.enums import NodeRole, NetworkType
 from typing import Dict, Generator, List, Set, Tuple
 from hashlib import md5
 from os import mkdir, chdir
 from re import sub
 from ipaddress import IPv4Network, IPv4Address
-from shutil import copyfile
 import json
+from .DockerImage import DockerImage
 
 SEEDEMU_INTERNET_MAP_IMAGE='handsonsecurity/seedemu-map'
 SEEDEMU_ETHER_VIEW_IMAGE='handsonsecurity/seedemu-etherview'
 
 DockerCompilerFileTemplates: Dict[str, str] = {}
-
-DockerCompilerFileTemplates['dockerfile'] = """\
-ARG DEBIAN_FRONTEND=noninteractive
-RUN echo 'exec zsh' > /root/.bashrc
-"""
 
 DockerCompilerFileTemplates['start_script'] = """\
 #!/bin/bash
@@ -207,82 +202,6 @@ DockerCompilerFileTemplates['local_image'] = """\
         image: {imageName}
 """
 
-class DockerImage(object):
-    """!
-    @brief The DockerImage class.
-
-    This class represents a candidate image for docker compiler.
-    """
-
-    __software: Set[str]
-    __name: str
-    __local: bool
-    __dirName: str
-
-    def __init__(self, name: str, software: List[str], local: bool = False, dirName: str = None) -> None:
-        """!
-        @brief create a new docker image.
-
-        @param name name of the image. Can be name of a local image, image on
-        dockerhub, or image in private repo.
-        @param software set of software pre-installed in the image, so the
-        docker compiler can skip them when compiling.
-        @param local (optional) set this image as a local image. A local image
-        is built locally instead of pulled from the docker hub. Default to False.
-        @param dirName (optional) directory name of the local image (when local
-        is True). Default to None. None means use the name of the image.
-        """
-        super().__init__()
-
-        self.__name = name
-        self.__software = set()
-        self.__local = local
-        self.__dirName = dirName if dirName != None else name
-
-        for soft in software:
-            self.__software.add(soft)
-
-    def getName(self) -> str:
-        """!
-        @brief get the name of this image.
-
-        @returns name.
-        """
-        return self.__name
-
-    def getSoftware(self) -> Set[str]:
-        """!
-        @brief get set of software installed on this image.
-        
-        @return set.
-        """
-        return self.__software
-
-    def getDirName(self) -> str:
-        """!
-        @brief returns the directory name of this image.
-
-        @return directory name.
-        """
-        return self.__dirName
-    
-    def isLocal(self) -> bool:
-        """!
-        @brief returns True if this image is local.
-
-        @return True if this image is local.
-        """
-        return self.__local
-    
-    def addSoftwares(self, software) -> DockerImage:
-        """!
-        @brief add softwares to this image.
-
-        @return self, for chaining api calls.
-        """
-        for soft in software:
-            self.__software.add(soft)
-
 BaseSystemImageMapping: Dict = {}
 # BaseSystemImageMapping['virtual-name'] = (DockerImage('image name'), [software...])
 BaseSystemImageMapping[BaseSystem.UBUNTU_20_04] = (DockerImage('ubuntu:20.04', []))
@@ -314,7 +233,7 @@ class Docker(Compiler):
     __forced_image: str
     __disable_images: bool
     __image_per_node_list: Dict[Tuple[str, str], DockerImage]
-    _used_images: Set[str]
+    _used_images: Set[DockerImage]
 
     def __init__(
         self,
@@ -469,8 +388,8 @@ class Docker(Compiler):
 
         registry = emulator.getRegistry()
         
-        # { [imageName]: { [softName]: [nodeRef] } }
-        softGroups: Dict[str, Dict[str, List[Node]]] = {}
+        # { [imageName]: { [softwareRef]: [nodeRef] } }
+        softGroups: Dict[str, Dict[NodeSoftware, List[Node]]] = {}
 
         # { [imageName]: useCount }
         groupIter: Dict[str, int] = {}
@@ -481,7 +400,7 @@ class Docker(Compiler):
 
             node: Node = obj
 
-            (img, _) = self._selectImageFor(node)
+            img = self._selectImageFor(node)
             imgName = img.getName()
 
             if not imgName in groupIter:
@@ -494,10 +413,12 @@ class Docker(Compiler):
 
             group = softGroups[imgName]
 
+            # We only care about grouping software installed with the package manager.
             for soft in node.getSoftware():
-                if soft not in group:
-                    group[soft] = []
-                group[soft].append(node)
+                if soft.usePackageManager():
+                    if soft not in group:
+                        group[soft] = []
+                    group[soft].append(node)
 
         for (key, val) in softGroups.items():
             maxIter = groupIter[key]
@@ -524,14 +445,29 @@ class Docker(Compiler):
                     self._log('the following software has been grouped together in step {}: {} since they are referenced by {} nodes.'.format(step, currentTier, len(currentTierNodes)))
                     step += 1
                 
-    
-    def _selectImageFor(self, node: Node) -> Tuple[DockerImage, Set[str]]:
+    def _imageFromNode(self, nodeName: str, node: Node) -> DockerImage:
+        """!
+        @brief creates a docker image definition from the node object
+
+        @param node node.
+
+        @returns the docker image
+        """
+        nodeFiles = node.getFiles()
+
+        nodeImage = DockerImage(nodeName, node.getSoftware(), local=True, dirName=None, baseImage=BaseSystemImageMapping[node.getBaseSystem()])
+
+        if node.hasAttribute('__soft_install_tiers'):
+            nodeImage.setSoftwareInstallTiers(node.getAttribute('__soft_install_tiers'))
+        return nodeImage
+
+    def _selectImageFor(self, node: Node) -> DockerImage:
         """!
         @brief select image for the given node.
 
         @param node node.
 
-        @returns tuple of selected image and set of missing software.
+        @returns the selected image.
         """
         nodeSoft = node.getSoftware()
         nodeKey = (node.getAsn(), node.getName())
@@ -545,13 +481,13 @@ class Docker(Compiler):
             (image, _) = self.__images[image_name]
 
             self._log('image-per-node configured, using {}'.format(image.getName()))
-            return (image, nodeSoft - image.getSoftware())
+            return image
 
         # Should we keep this feature? 
         if self.__disable_images:
             self._log('disable-imaged configured, using base image.')
             (image, _) = self.__images['ubuntu:20.04']
-            return (image, nodeSoft - image.getSoftware())
+            return image
 
         # Set Default Image for All Nodes 
         if self.__forced_image != None:
@@ -561,13 +497,13 @@ class Docker(Compiler):
 
             self._log('force-image configured, using image: {}'.format(image.getName()))
 
-            return (image, nodeSoft - image.getSoftware())
+            return image
         
         #############################################################
         if node.getBaseSystem().value != BaseSystem.DEFAULT.value:
             #Maintain a table : Virtual Image Name - Actual Image Name 
             image = BaseSystemImageMapping[node.getBaseSystem()]
-            return (image, nodeSoft - image.getSoftware())
+            return image
         
         candidates: List[Tuple[DockerImage, int]] = []
         minMissing = len(nodeSoft)
@@ -590,7 +526,7 @@ class Docker(Compiler):
             if prio >= maxPrio:
                 selected = candidate
 
-        return (selected, nodeSoft - selected.getSoftware())
+        return selected
 
 
     def _getNetMeta(self, net: Network) -> str: 
@@ -757,34 +693,6 @@ class Docker(Compiler):
         """
         return '{}_{}_'.format(type, scope)
 
-    def _addFile(self, path: str, content: str) -> str:
-        """!
-        @brief Stage file to local folder and return Dockerfile command.
-
-        @param path path to file. (in container)
-        @param content content of the file.
-
-        @returns COPY expression for dockerfile.
-        """
-
-        staged_path = md5(path.encode('utf-8')).hexdigest()
-        print(content, file=open(staged_path, 'w'))
-        return 'COPY {} {}\n'.format(staged_path, path)
-    
-    def _importFile(self, path: str, hostpath: str) -> str:
-        """!
-        @brief Stage file to local folder and return Dockerfile command.
-
-        @param path path to file. (in container)
-        @param hostpath path to file. (on host)
-
-        @returns COPY expression for dockerfile.
-        """
-
-        staged_path = md5(path.encode('utf-8')).hexdigest()
-        copyfile(hostpath, staged_path)
-        return 'COPY {} {}\n'.format(staged_path, path)
-
     def _compileNode(self, node: Node) -> str:
         """!
         @brief Compile a single node. Will create folder for node and the
@@ -874,58 +782,36 @@ class Docker(Compiler):
                 volumeList = lst
             )
 
-        dockerfile = DockerCompilerFileTemplates['dockerfile']
         mkdir(real_nodename)
         chdir(real_nodename)
 
-        (image, soft) = self._selectImageFor(node)
-
-        if not node.hasAttribute('__soft_install_tiers') and len(soft) > 0:
-            dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(soft)))
-
-        if node.hasAttribute('__soft_install_tiers'):
-            softLists: List[List[str]] = node.getAttribute('__soft_install_tiers')
-            for softList in softLists:
-                dockerfile += 'RUN apt-get update && apt-get install -y --no-install-recommends {}\n'.format(' '.join(sorted(softList)))
-
-        dockerfile += 'RUN curl -L https://grml.org/zsh/zshrc > /root/.zshrc\n'
-        dockerfile = 'FROM {}\n'.format(md5(image.getName().encode('utf-8')).hexdigest()) + dockerfile
-        self._used_images.add(image.getName())
-
-        for cmd in node.getBuildCommands(): dockerfile += 'RUN {}\n'.format(cmd)
+        nodeImage = self._imageFromNode(real_nodename, node)
+        baseImage = self._selectImageFor(node)
+        self._used_images.add(baseImage)
+        nodeImage = nodeImage.rebaseImage(baseImage)
 
         start_commands = ''
 
         if self.__self_managed_network:
-            start_commands += 'chmod +x /replace_address.sh\n'
             start_commands += '/replace_address.sh\n'
-            dockerfile += self._addFile('/replace_address.sh', DockerCompilerFileTemplates['replace_address_script'])
-            dockerfile += self._addFile('/dummy_addr_map.txt', dummy_addr_map)
-            dockerfile += self._addFile('/root/.zshrc.pre', DockerCompilerFileTemplates['zshrc_pre'])
+            nodeImage.addFile(NodeFile('/replace_address.sh', DockerCompilerFileTemplates['replace_address_script'], isExecutable=True))
+            nodeImage.addFile(NodeFile('/dummy_addr_map.txt', dummy_addr_map))
+            nodeImage.addFile(NodeFile('/root/.zshrc.pre', DockerCompilerFileTemplates['zshrc_pre']))
 
         for (cmd, fork) in node.getStartCommands():
             start_commands += '{}{}\n'.format(cmd, ' &' if fork else '')
 
-        dockerfile += self._addFile('/start.sh', DockerCompilerFileTemplates['start_script'].format(
+        nodeImage.addFile(NodeFile('/start.sh', DockerCompilerFileTemplates['start_script'].format(
             startCommands = start_commands
-        ))
+        ), isExecutable=True))
 
-        dockerfile += self._addFile('/seedemu_sniffer', DockerCompilerFileTemplates['seedemu_sniffer'])
-        dockerfile += self._addFile('/seedemu_worker', DockerCompilerFileTemplates['seedemu_worker'])
+        nodeImage.addFile(NodeFile('/seedemu_sniffer', DockerCompilerFileTemplates['seedemu_sniffer'], isExecutable=True))
+        nodeImage.addFile(NodeFile('/seedemu_worker', DockerCompilerFileTemplates['seedemu_worker'], isExecutable=True))
 
-        dockerfile += 'RUN chmod +x /start.sh\n'
-        dockerfile += 'RUN chmod +x /seedemu_sniffer\n'
-        dockerfile += 'RUN chmod +x /seedemu_worker\n'
+        for f in node.getFiles():
+            nodeImage.addFile(f)
 
-        for file in node.getFiles():
-            (path, content) = file.get()
-            dockerfile += self._addFile(path, content)
-
-        for (cpath, hpath) in node.getImportedFiles().items():
-            dockerfile += self._importFile(cpath, hpath)
-
-        dockerfile += 'CMD ["/start.sh"]\n'
-        print(dockerfile, file=open('Dockerfile', 'w'))
+        nodeImage.generateImageSetup()
 
         chdir('..')
 
@@ -986,15 +872,17 @@ class Docker(Compiler):
         dummies = ''
 
         for image in self._used_images:
-            self._log('adding dummy service for image {}...'.format(image))
+            if image.isLocal():
+                continue
 
-            imageDigest = md5(image.encode('utf-8')).hexdigest()
+            self._log('adding dummy service for image {}...'.format(image))
+            imageDigest = md5(image.getName().encode('utf-8')).hexdigest()
             
             dummies += DockerCompilerFileTemplates['compose_dummy'].format(
                 imageDigest = imageDigest
             )
 
-            dockerfile = 'FROM {}\n'.format(image)
+            dockerfile = 'FROM {}\n'.format(image.getName())
             print(dockerfile, file=open(imageDigest, 'w'))
 
         chdir('..')
@@ -1048,7 +936,7 @@ class Docker(Compiler):
         local_images = ''
 
         for (image, _) in self.__images.values():
-            if image.getName() not in self._used_images or not image.isLocal(): continue
+            if image not in self._used_images or not image.isLocal(): continue
             local_images += DockerCompilerFileTemplates['local_image'].format(
                 imageName = image.getName(),
                 dirName = image.getDirName()
