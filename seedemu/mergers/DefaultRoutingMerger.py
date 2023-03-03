@@ -7,9 +7,8 @@ class DefaultRoutingMerger(Merger):
 
     This merger merges direct network lists.
     """
-
-    def getName(self) -> str:
-        return 'DefaultRoutingMerger'
+    def __init__(self):
+        super().__init__()
 
     def getTargetType(self) -> str:
         return 'RoutingLayer'

@@ -185,7 +185,7 @@ class Mpls(Layer, Graphable):
 
         @param node node.
         """
-        self._log('Setting up LDP and OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
+        self.logger.info('Setting up LDP and OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
 
         node.setPrivileged(True)
         node.addSoftware('frr')
@@ -222,7 +222,7 @@ class Mpls(Layer, Graphable):
         @param node list of nodes.
         """
 
-        self._log('Setting up iBGP full mesh for edge nodes...')
+        self.logger.info('Setting up iBGP full mesh for edge nodes...')
         for local in nodes:
 
             n = 1
@@ -244,12 +244,12 @@ class Mpls(Layer, Graphable):
         reg = emulator.getRegistry()
         for asn in self.__enabled:
             if reg.has('seedemu', 'layer', 'Ospf'):
-                self._log('Ospf layer exists, masking as{}'.format(asn))
+                self.logger.info('Ospf layer exists, masking as{}'.format(asn))
                 ospf: Ospf = reg.get('seedemu', 'layer', 'Ospf')
                 ospf.maskAsn(asn)
 
             if reg.has('seedemu', 'layer', 'Ibgp'):
-                self._log('Ibgp layer exists, masking as{}'.format(asn))
+                self.logger.info('Ibgp layer exists, masking as{}'.format(asn))
                 ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
                 ibgp.maskAsn(asn)
 

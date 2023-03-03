@@ -87,7 +87,7 @@ class Routing(Layer):
                 self.__installBird(rs_node)
                 rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
                 rs_node.appendStartCommand('bird -d', True)
-                self._log("Bootstrapping bird.conf for RS {}...".format(name))
+                self.logger.info("Bootstrapping bird.conf for RS {}...".format(name))
 
                 rs_ifaces = rs_node.getInterfaces()
                 assert len(rs_ifaces) == 1, "rs node {} has != 1 interfaces".format(rs_node.getName())
@@ -103,7 +103,7 @@ class Routing(Layer):
                 rnode: Router = obj
                 if not issubclass(rnode.__class__, Router): rnode.__class__ = Router
 
-                self._log("Setting up loopback interface for AS{} Router {}...".format(scope, name))
+                self.logger.info("Setting up loopback interface for AS{} Router {}...".format(scope, name))
 
                 lbaddr = self.__loopback_assigner[self.__loopback_pos]
 
@@ -113,7 +113,7 @@ class Routing(Layer):
                 rnode.setLoopbackAddress(lbaddr)
                 self.__loopback_pos += 1
 
-                self._log("Bootstrapping bird.conf for AS{} Router {}...".format(scope, name))
+                self.logger.info("Bootstrapping bird.conf for AS{} Router {}...".format(scope, name))
 
                 self.__installBird(rnode)
 
@@ -149,7 +149,7 @@ class Routing(Layer):
             if type == 'rnode':
                 rnode: Router = obj
                 if issubclass(rnode.__class__, RealWorldRouter):
-                    self._log("Sealing real-world router as{}/{}...".format(rnode.getAsn(), rnode.getName()))
+                    self.logger.info("Sealing real-world router as{}/{}...".format(rnode.getAsn(), rnode.getName()))
                     rnode.seal()
 
             if type == 'hnode':
@@ -169,7 +169,7 @@ class Routing(Layer):
                             break
                 
                 assert rif != None, 'Host {} in as{} in network {}: no router'.format(name, scope, hnet.getName())
-                self._log("Setting default route for host {} ({}) to router {}".format(name, hif.getAddress(), rif.getAddress()))
+                self.logger.info("Setting default route for host {} ({}) to router {}".format(name, hif.getAddress(), rif.getAddress()))
                 hnode.appendStartCommand('ip rou del default 2> /dev/null')
                 hnode.appendStartCommand('ip route add default via {} dev {}'.format(rif.getAddress(), rif.getNet().getName()))
 

@@ -445,14 +445,14 @@ class DomainNameService(Service):
         @param zone root zone reference.
         """
         if (len(zone.getSubZones().values()) == 0): return
-        self._log('Collecting subzones NSes of "{}"...'.format(zone.getName()))
+        self.logger.info('Collecting subzones NSes of "{}"...'.format(zone.getName()))
         for subzone in zone.getSubZones().values():
             for gule in subzone.getGuleRecords(): zone.addRecord(gule)
             self.__autoNameServer(subzone)
 
     def __resolvePendingRecords(self, emulator: Emulator, zone: Zone):
         zone.resolvePendingRecords(emulator)
-        self._log('resloving pending records for zone "{}"...'.format(zone.getName()))
+        self.logger.info('resloving pending records for zone "{}"...'.format(zone.getName()))
         for subzone in zone.getSubZones().values():
             self.__resolvePendingRecords(emulator, subzone)
 
@@ -564,7 +564,7 @@ class DomainNameService(Service):
 
     def render(self, emulator: Emulator):
         if self.__autoNs:
-            self._log('Setting up NS records...')
+            self.logger.info('Setting up NS records...')
             self.__autoNameServer(self.__rootZone)
 
         super().render(emulator)

@@ -32,9 +32,6 @@ class DefaultEbgpMerger(Merger):
         self.__peeringConflictHandler = onPeeringRelationshipConflict
         self.__xcPeeringConflictHandler = onXcPeeringRelationshipConflict
         
-    def getName(self) -> str:
-        return 'DefaultEbgpMerger'
-
     def getTargetType(self) -> str:
         return 'EbgpLayer'
 
@@ -54,7 +51,7 @@ class DefaultEbgpMerger(Merger):
 
         for ((ix, a, b), rel) in objectB.getPrivatePeerings().items():
             if (ix, a, b) in new_private.keys() and new_private[(ix, a, b)] != rel:
-                self._log('Peering relationship conflict for peering in IX{} between AS{} and AS{}: {} != {}, calling handler'.format(
+                self.logger.info('Peering relationship conflict for peering in IX{} between AS{} and AS{}: {} != {}, calling handler'.format(
                     ix, a, b, new_private[(ix, a, b)], rel
                 ))
                 new_private[(ix, a, b)] = self.__peeringConflictHandler(ix, a, b, new_private[(ix, a, b)], rel)
@@ -65,7 +62,7 @@ class DefaultEbgpMerger(Merger):
 
         for ((a, b), rel) in objectB.getCrossConnectPeerings().items():
             if (a, b) in new_xc.keys() and new_private[(a, b)] != rel:
-                self._log('Peering relationship conflict for peering in XC between AS{} and AS{}: {} != {}, calling handler'.format(
+                self.logger.info('Peering relationship conflict for peering in XC between AS{} and AS{}: {} != {}, calling handler'.format(
                     a, b, new_xc[(a, b)], rel
                 ))
                 new_xc[(a, b)] = self.__xcPeeringConflictHandler(a, b, new_xc[(a, b)], rel)

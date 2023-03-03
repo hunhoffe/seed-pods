@@ -91,7 +91,7 @@ class Ebgp(Layer, Graphable):
             elif routerB == None: routerB = node
 
             if not node.getAttribute('__bgp_bootstrapped', False):
-                self._log('Bootstrapping as{}/{} for BGP...'.format(node.getAsn(), node.getName()))
+                self.logger.info('Bootstrapping as{}/{} for BGP...'.format(node.getAsn(), node.getName()))
                 
                 node.setAttribute('__bgp_bootstrapped', True)
                 node.appendFile('/etc/bird/bird.conf', EbgpFileTemplates['bgp_commons'].format(localAsn = node.getAsn()))
@@ -347,7 +347,7 @@ class Ebgp(Layer, Graphable):
                         break
 
             assert p_ixnode != None, 'cannot resolve peering: as{} not in ix{}'.format(peer, ix)
-            self._log("adding peering: {} as {} (RS) <-> {} as {}".format(rs_if.getAddress(), ix, p_ixif.getAddress(), peer))
+            self.logger.info("adding peering: {} as {} (RS) <-> {} as {}".format(rs_if.getAddress(), ix, p_ixif.getAddress(), peer))
 
             self.__createPeer(ix_rs, p_ixnode, rs_if.getAddress(), p_ixif.getAddress(), PeerRelationship.Peer)
 
@@ -382,7 +382,7 @@ class Ebgp(Layer, Graphable):
 
             assert hit, 'cannot find XC to configure peer AS{} <--> AS{}'.format(a, b)
 
-            self._log("adding XC peering: {} as {} <-({})-> {} as {}".format(a_addr, a, rel, b_addr, b))
+            self.logger.info("adding XC peering: {} as {} <-({})-> {} as {}".format(a_addr, a, rel, b_addr, b))
 
             self.__createPeer(a_router, b_router, a_addr, b_addr, rel)
 
@@ -419,7 +419,7 @@ class Ebgp(Layer, Graphable):
             
             assert b_ixnode != None, 'cannot resolve peering: as{} not in ix{}'.format(b, ix)
 
-            self._log("adding IX peering: {} as {} <-({})-> {} as {}".format(a_ixif.getAddress(), a, rel, b_ixif.getAddress(), b))
+            self.logger.info("adding IX peering: {} as {} <-({})-> {} as {}".format(a_ixif.getAddress(), a, rel, b_ixif.getAddress(), b))
 
             self.__createPeer(a_ixnode, b_ixnode, a_ixif.getAddress(), b_ixif.getAddress(), rel)
 
@@ -439,7 +439,7 @@ class Ebgp(Layer, Graphable):
         for (i, _) in self.__rs_peers: ix_list.add(i)
         for (i, _, _), _ in self.__peerings.items(): ix_list.add(i)
         for ix in ix_list:
-            self._log('Creating RS peering sessions graph for IX{}...'.format(ix))
+            self.logger.info('Creating RS peering sessions graph for IX{}...'.format(ix))
             ix_graph = self._addGraph('IX{} Peering Sessions'.format(ix), False)
 
             mesh_ases = set()
@@ -447,7 +447,7 @@ class Ebgp(Layer, Graphable):
             for (i, a) in self.__rs_peers:
                 if i == ix: mesh_ases.add(a)
             
-            self._log('IX{} RS-mesh: {}'.format(ix, mesh_ases))
+            self.logger.info('IX{} RS-mesh: {}'.format(ix, mesh_ases))
 
             while len(mesh_ases) > 0:
                 a = mesh_ases.pop()
@@ -465,7 +465,7 @@ class Ebgp(Layer, Graphable):
                     ix_graph.addEdge('AS{}'.format(a), 'AS{}'.format(b), 'IX{}'.format(ix), 'IX{}'.format(ix), style = 'dashed', alabel = 'R', blabel= 'R')
                     
         for (i, a, b), rel in self.__peerings.items():
-            self._log('Creating private peering sessions graph for IX{} AS{} <-> AS{}...'.format(i, a, b))
+            self.logger.info('Creating private peering sessions graph for IX{} AS{} <-> AS{}...'.format(i, a, b))
 
             ix_graph = self._addGraph('IX{} Peering Sessions'.format(i), False)
 

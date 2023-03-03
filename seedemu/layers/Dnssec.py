@@ -113,13 +113,13 @@ class Dnssec(Layer):
         dns: DomainNameService = reg.get('seedemu', 'layer', 'DomainNameService')
         nodes: Set[Node] = set()
         for zonename in self.__zonenames:
-            self._log('Looking for server hosting "{}"...'.format(zonename))
+            self.logger.info('Looking for server hosting "{}"...'.format(zonename))
             node = self.__findZoneNode(dns, zonename)
             
             assert node != None, 'no server found for dnssec-enabled zone {}'.format(zonename)
 
             (scope, _, name) = node.getRegistryInfo()
-            self._log('Setting up DNSSEC for "{}" on as{}/{}'.format(zonename, scope, name))
+            self.logger.info('Setting up DNSSEC for "{}" on as{}/{}'.format(zonename, scope, name))
             nodes.add(node)
             node.appendFile('/dnssec_zones.txt', '{}\n'.format(zonename))
 

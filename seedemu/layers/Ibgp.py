@@ -44,7 +44,7 @@ class Ibgp(Layer, Graphable):
         if start in visited:
             return
         
-        self._log('found node: as{}/{} via {}'.format(start.getAsn(), start.getName(), netname))
+        self.logger.info('found node: as{}/{} via {}'.format(start.getAsn(), start.getName(), netname))
         visited.append(start)
 
         for iface in start.getInterfaces():
@@ -95,11 +95,11 @@ class Ibgp(Layer, Graphable):
         for asn in base.getAsns():
             if asn in self.__masked: continue
 
-            self._log('setting up IBGP peering for as{}...'.format(asn))
+            self.logger.info('setting up IBGP peering for as{}...'.format(asn))
             routers: List[Node] = ScopedRegistry(str(asn), reg).getByType('rnode')
 
             for local in routers:
-                self._log('setting up IBGP peering on as{}/{}...'.format(asn, local.getName()))
+                self.logger.info('setting up IBGP peering on as{}/{}...'.format(asn, local.getName()))
 
                 remotes = []
                 self.__dfs(local, remotes)
@@ -121,7 +121,7 @@ class Ibgp(Layer, Graphable):
 
                     n += 1
 
-                    self._log('adding peering: {} <-> {} (ibgp, as{})'.format(laddr, raddr, asn))
+                    self.logger.info('adding peering: {} <-> {} (ibgp, as{})'.format(laddr, raddr, asn))
 
     def _doCreateGraphs(self, emulator: Emulator):
         base: Base = emulator.getRegistry().get('seedemu', 'layer', 'Base')

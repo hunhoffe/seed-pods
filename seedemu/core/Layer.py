@@ -3,14 +3,16 @@ from __future__ import annotations
 from .Printable import Printable
 from .Registry import Registrable
 from .Emulator import Emulator
+from .Logger import get_logger
 from .Configurable import Configurable
 from .Merger import Mergeable
 
+from abc import ABCMeta, abstractmethod
 from sys import stderr
 from typing import Set, Dict, Tuple
 
 
-class Layer(Printable, Registrable, Configurable, Mergeable):
+class Layer(Printable, Registrable, Configurable, Mergeable, metaclass=ABCMeta):
     """!
     @brief The layer interface.
     """
@@ -21,9 +23,9 @@ class Layer(Printable, Registrable, Configurable, Mergeable):
         """!
         @brief create a new layer.
         """
-
         super().__init__()
         self.__dependencies = {}
+        self.logger = get_logger(self.__class__.__name__ + "Layer")
 
     def getTypeName(self) -> str:
         """!
@@ -74,6 +76,7 @@ class Layer(Printable, Registrable, Configurable, Mergeable):
 
         return self.__dependencies
 
+    @abstractmethod
     def getName(self) -> str:
         """!
         @brief Get name of this layer.
@@ -85,14 +88,9 @@ class Layer(Printable, Registrable, Configurable, Mergeable):
         """
         raise NotImplementedError('getName not implemented')
 
+    @abstractmethod
     def render(self, emulator: Emulator) -> None:
         """!
         @brief Handle rendering.
         """
         raise NotImplementedError('render not implemented')
-
-    def _log(self, message: str) -> None:
-        """!
-        @brief Log to stderr.
-        """
-        print("==== {}Layer: {}".format(self.getName(), message), file=stderr)

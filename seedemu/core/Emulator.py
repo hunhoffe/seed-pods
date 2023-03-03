@@ -1,5 +1,6 @@
 from __future__ import annotations
 from seedemu.core.enums import NetworkType, NodeRole
+from .Logger import get_logger
 from .Merger import Mergeable, Merger
 from .Registry import Registry, Registrable, Printable
 from .Network import Network
@@ -112,6 +113,8 @@ class Emulator:
         self.__service_net_prefix = '192.168.160.0/23'
         self.__service_net = None
 
+        self.logger = get_logger(self.__class__.__name__)
+
     def __render(self, layerName, optional: bool, configure: bool):
         """!
         @brief Render a layer.
@@ -121,46 +124,46 @@ class Emulator:
         """
         verb = 'configure' if configure else 'render'
 
-        self.__log('requesting {}: {}'.format(verb, layerName))
+        self.logger.info('requesting {}: {}'.format(verb, layerName))
 
         if optional and layerName not in self.__layers.db:
-            self.__log('{}: not found but is optional, skipping'.format(layerName))
+            self.logger.info('{}: not found but is optional, skipping'.format(layerName))
             return
 
         assert layerName in self.__layers.db, 'Layer {} required but missing'.format(layerName)
 
         (layer, done) = self.__layers.db[layerName]
         if done:
-            self.__log('{}: already done, skipping'.format(layerName))
+            self.logger.info('{}: already done, skipping'.format(layerName))
             return
 
         if layerName in self.__dependencies_db:
             for (dep, opt) in self.__dependencies_db[layerName]:
-                self.__log('{}: requesting dependency render: {}'.format(layerName, dep))
+                self.logger.info('{}: requesting dependency render: {}'.format(layerName, dep))
                 self.__render(dep, opt, configure)
 
-        self.__log('entering {}...'.format(layerName))
+        self.logger.info('entering {}...'.format(layerName))
 
         hooks: List[core.Hook] = []
         for hook in self.__registry.getByType('seedemu', 'hook'):
             if hook.getTargetLayer() == layerName: hooks.append(hook)
         
         if configure:
-            self.__log('invoking pre-configure hooks for {}...'.format(layerName))
+            self.logger.info('invoking pre-configure hooks for {}...'.format(layerName))
             for hook in hooks: hook.preconfigure(self)
-            self.__log('configuring {}...'.format(layerName))
+            self.logger.info('configuring {}...'.format(layerName))
             layer.configure(self)
-            self.__log('invoking post-configure hooks for {}...'.format(layerName))
+            self.logger.info('invoking post-configure hooks for {}...'.format(layerName))
             for hook in hooks: hook.postconfigure(self)
         else:
-            self.__log('invoking pre-render hooks for {}...'.format(layerName))
+            self.logger.info('invoking pre-render hooks for {}...'.format(layerName))
             for hook in hooks: hook.prerender(self)
-            self.__log('rendering {}...'.format(layerName))
+            self.logger.info('rendering {}...'.format(layerName))
             layer.render(self)
-            self.__log('invoking post-render hooks for {}...'.format(layerName))
+            self.logger.info('invoking post-render hooks for {}...'.format(layerName))
             for hook in hooks: hook.postrender(self)
         
-        self.__log('done: {}'.format(layerName))
+        self.logger.info('done: {}'.format(layerName))
         self.__layers.db[layerName] = (layer, True)
     
     def __loadDependencies(self, deps: Dict[str, Set[Tuple[str, bool]]]):
@@ -175,14 +178,6 @@ class Emulator:
                 continue
 
             self.__dependencies_db[layer] |= deps
-
-    def __log(self, message: str):
-        """!
-        @brief log to stderr.
-
-        @param message message.
-        """
-        print('== Emulator: {}'.format(message), file=stderr)
 
     def rendered(self) -> bool:
         """!
@@ -347,32 +342,32 @@ class Emulator:
         self.__render('Base', False, True)
 
         # collect all pending vnode names
-        self.__log('collecting virtual node names in the emulation...')
+        self.logger.info('collecting virtual node names in the emulation...')
         vnodes: List[str] = []
         for (layer, _) in self.__layers.db.values():
             if not isinstance(layer, core.Service): continue
             for (vnode, _) in layer.getPendingTargets().items():
                 assert vnode not in vnodes, 'duplicated vnode: {}'.format(vnode)
                 vnodes.append(vnode)
-        self.__log('found {} virtual nodes.'.format(len(vnodes)))
+        self.logger.info('found {} virtual nodes.'.format(len(vnodes)))
 
         # resolv bindings for all vnodes
-        self.__log('resolving binding for all virtual nodes...')
+        self.logger.info('resolving binding for all virtual nodes...')
         for binding in self.getBindings():
             for vnode in vnodes:
                 if vnode in self.__resolved_bindings: continue
                 pnode = binding.getCandidate(vnode, self)
                 if pnode == None: continue
-                self.__log('vnode {} bound to as{}/{}'.format(vnode, pnode.getAsn(), pnode.getName()))
+                self.logger.info('vnode {} bound to as{}/{}'.format(vnode, pnode.getAsn(), pnode.getName()))
                 self.__resolved_bindings[vnode] = pnode
 
-        self.__log('applying changes made to virtual physical nodes to real physical nodes...')
+        self.logger.info('applying changes made to virtual physical nodes to real physical nodes...')
         vpnodes = self.__bindings.vpnodes
         for (vnode, pnode) in self.__resolved_bindings.items():
             if not vnode in vpnodes: continue
             vpnode = vpnodes[vnode]
 
-            self.__log('applying changes made on vnode {} to pnode as{}/{}...'.format(vnode, pnode.getAsn(), pnode.getName()))
+            self.logger.info('applying changes made on vnode {} to pnode as{}/{}...'.format(vnode, pnode.getAsn(), pnode.getName()))
             pnode.copySettings(vpnode)
 
         for layerName in self.__layers.db.keys():

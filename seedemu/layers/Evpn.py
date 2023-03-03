@@ -143,7 +143,7 @@ class Evpn(Layer):
         return self.__customers
     
     def __configureOspf(self, node: Router) -> str:
-        self._log('configuring OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
+        self.logger.info('configuring OSPF on as{}/{}'.format(node.getAsn(), node.getName()))
 
         ospf_ifaces = ''
 
@@ -161,7 +161,7 @@ class Evpn(Layer):
         return ospf_ifaces
 
     def __configureIbgpMesh(self, local: Router, nodes: List[Router]) -> str:
-        self._log('configuring IBGP mesh on provider edge as{}/{}'.format(local.getAsn(), local.getName()))
+        self.logger.info('configuring IBGP mesh on provider edge as{}/{}'.format(local.getAsn(), local.getName()))
 
         neighbours = ''
 
@@ -175,7 +175,7 @@ class Evpn(Layer):
         return neighbours
 
     def __configureFrr(self, router: Router):
-        self._log('setting up FRR on as{}/{}'.format(router.getAsn(), router.getName()))
+        self.logger.info('setting up FRR on as{}/{}'.format(router.getAsn(), router.getName()))
 
         router.setFile('/frr_start', EvpnFileTemplates['frr_start_script'])
         router.appendStartCommand('chmod +x /frr_start')
@@ -183,7 +183,7 @@ class Evpn(Layer):
         router.addSoftware('frr')
 
     def __configureProviderRouter(self, router: Router, peers: List[Router] = []):
-        self._log('configuring common properties for provider router as{}/{}'.format(router.getAsn(), router.getName()))
+        self.logger.info('configuring common properties for provider router as{}/{}'.format(router.getAsn(), router.getName()))
 
         self.__configureFrr(router)
 
@@ -202,7 +202,7 @@ class Evpn(Layer):
 
         for (_, _, vni) in customers: vnis.add(vni)
 
-        self._log('creating vxlan interfaces on as{}/{}'.format(router.getAsn(), router.getName()))
+        self.logger.info('creating vxlan interfaces on as{}/{}'.format(router.getAsn(), router.getName()))
         for vni in vnis:
             vxlan_ifaces += EvpnFileTemplates['vetp_bridge'].format(
                 name = vni,
@@ -218,7 +218,7 @@ class Evpn(Layer):
         # todo: bridge to customer's network
 
     def __configureAutonomousSystem(self, asn: int, reg: Registry):
-        self._log('configuring as{}'.format(asn))
+        self.logger.info('configuring as{}'.format(asn))
 
         customers: List[Tuple[int, str, str, int]] = []
 
@@ -229,12 +229,12 @@ class Evpn(Layer):
         for r in ScopedRegistry(str(asn), reg).getByType('rnode'):
             routers.append(r)
 
-        self._log('collecting customers of as{}'.format(asn))
+        self.logger.info('collecting customers of as{}'.format(asn))
         for (pasn, casn, cn, prn, vni) in self.__customers:
             if pasn != asn: continue
             customers.append((casn, cn, prn, vni))
 
-        self._log('classifying p/pe for as{}'.format(asn))
+        self.logger.info('classifying p/pe for as{}'.format(asn))
         for r in routers:
             is_edge = False
 
@@ -246,12 +246,12 @@ class Evpn(Layer):
             if is_edge: pe.append(r)
             else: p.append(r)
 
-        self._log('configuring p routers for as{}'.format(asn))
+        self.logger.info('configuring p routers for as{}'.format(asn))
         for router in p: self.__configureProviderRouter(router)
 
-        self._log('configuring pe routers for as{}'.format(asn))
+        self.logger.info('configuring pe routers for as{}'.format(asn))
         for router in pe:
-            self._log('collection customers connected to as{}/{}'.format(asn, router.getName()))
+            self.logger.info('collection customers connected to as{}/{}'.format(asn, router.getName()))
 
             this_customers: List[Tuple[int, str, int]] = []
 
@@ -271,12 +271,12 @@ class Evpn(Layer):
 
         for asn in self.asns:
             if reg.has('seedemu', 'layer', 'Ospf'):
-                self._log('Ospf layer exists, masking as{}'.format(asn))
+                self.logger.info('Ospf layer exists, masking as{}'.format(asn))
                 ospf: Ospf = reg.get('seedemu', 'layer', 'Ospf')
                 ospf.maskAsn(asn)
 
             if reg.has('seedemu', 'layer', 'Ibgp'):
-                self._log('Ibgp layer exists, masking as{}'.format(asn))
+                self.logger.info('Ibgp layer exists, masking as{}'.format(asn))
                 ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
                 ibgp.maskAsn(asn)
 

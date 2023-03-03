@@ -1,14 +1,13 @@
+from abc import ABCMeta, abstractmethod
 from seedemu.core import Emulator
 from typing import List
 
-class Component(object):
+class Component(metaclass=ABCMeta):
     """!
     @brief Component interface.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-
+    @abstractmethod
     def get(self) -> Emulator:
         """!
         @brief get the emulator with component.

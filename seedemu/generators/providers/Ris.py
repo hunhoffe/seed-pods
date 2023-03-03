@@ -62,10 +62,10 @@ class Ris(DataProvider):
 
     def getPrefixes(self, asn: int) -> List[str]:
         if asn in self.__cache['prefixes']:
-            self._log('prefix list of AS{} in cache.'.format(asn))
+            self.logger.info('prefix list of AS{} in cache.'.format(asn))
             return self.__cache['prefixes'][asn]
 
-        self._log('prefix list of AS{} not in cache, loading from RIPE RIS...'.format(asn))
+        self.logger.info('prefix list of AS{} not in cache, loading from RIPE RIS...'.format(asn))
         
         data = self.__ripe('announced-prefixes', { 'resource': asn })
 
@@ -74,10 +74,10 @@ class Ris(DataProvider):
 
     def getPeers(self, asn: int) -> Dict[int, str]:
         if asn in self.__cache['peers']:
-            self._log('peer list of AS{} in cache.'.format(asn))
+            self.logger.info('peer list of AS{} in cache.'.format(asn))
             return self.__cache['peers'][asn]
 
-        self._log('peer list of AS{} not in cache, loading from RIPE RIS...'.format(asn))
+        self.logger.info('peer list of AS{} not in cache, loading from RIPE RIS...'.format(asn))
 
         data = self.__ripe('asn-neighbours', { 'resource': asn })
 
@@ -91,10 +91,10 @@ class Ris(DataProvider):
     
     def getInternetExchanges(self, asn: int) -> List[int]:
         if asn in self.__cache['exchanges']:
-            self._log('exchange list of AS{} in cache.'.format(asn))
+            self.logger.info('exchange list of AS{} in cache.'.format(asn))
             return self.__cache['exchanges'][asn]
         
-        self._log('exchange list of AS{} not in cache, loading from PeeringDB...'.format(asn))
+        self.logger.info('exchange list of AS{} not in cache, loading from PeeringDB...'.format(asn))
 
         exchanges = []
 
@@ -105,7 +105,7 @@ class Ris(DataProvider):
 
         if len(data) > 0: exchanges = data[0]['netixlan_set']
         
-        if len(exchanges) == 0: self._log('note: AS{} does not have any public exchanges on record.'.format(asn))
+        if len(exchanges) == 0: self.logger.info('note: AS{} does not have any public exchanges on record.'.format(asn))
         
         self.__cache['exchanges'][asn] = exchanges
 
@@ -113,10 +113,10 @@ class Ris(DataProvider):
 
     def getInternetExchangeMembers(self, id: int) -> Dict[int, str]:
         if id in self.__cache['exchange_details']:
-            self._log('exchange details of IX{} in cache.'.format(id))
+            self.logger.info('exchange details of IX{} in cache.'.format(id))
             return self.__cache['exchange_details'][id]['']
         
-        self._log('exchange details of IX{} not in cache, loading from PeeringDB...'.format(id))
+        self.logger.info('exchange details of IX{} not in cache, loading from PeeringDB...'.format(id))
 
     def getInternetExchangePrefix(self, id: int) -> str:
         return

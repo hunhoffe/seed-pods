@@ -36,7 +36,7 @@ class BgpAttackerInjectorHook(Hook):
 
     def postrender(self, emulator: Emulator):
         prefixes = self.__component.getHijackedPrefixes()
-        self._log('hijacking prefixes: {}'.format(prefixes))
+        self.logger.info('hijacking prefixes: {}'.format(prefixes))
         
         router = self.__component.getHijackerRouter()
         router.addTable('t_hijack')

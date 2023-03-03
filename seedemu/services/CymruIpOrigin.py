@@ -109,7 +109,7 @@ class CymruIpOriginService(Service):
 
         mappings: List[Tuple[str, str]] = []
         
-        self._log('Collecting all networks in the simulation...')
+        self.logger.info('Collecting all networks in the simulation...')
         for regobj in reg.getAll().items():
             [(asn, type, name), obj] = regobj
             if type != 'net': continue
@@ -128,12 +128,12 @@ class CymruIpOriginService(Service):
             (prefix, asn) = mapping
             self.addMapping(str(prefix), asn)
 
-        self._log('Creating "cymru.com." zone...')
+        self.logger.info('Creating "cymru.com." zone...')
         dns: DomainNameService = reg.get('seedemu', 'layer', 'DomainNameService')
         zone = dns.getZone('cymru.com.')
         self.__dns = dns
 
-        self._log('Adding mappings...')
+        self.logger.info('Adding mappings...')
         for record in self.__records:
             zone.addRecord(record)
 

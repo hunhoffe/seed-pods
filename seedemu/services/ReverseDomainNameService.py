@@ -37,14 +37,14 @@ class ReverseDomainNameService(Service):
     def configure(self, emulator: Emulator):
         reg = emulator.getRegistry()
 
-        self._log('Creating "in-addr.arpa." zone...')
+        self.logger.info('Creating "in-addr.arpa." zone...')
         self.__dns = reg.get('seedemu', 'layer', 'DomainNameService')
         zone = self.__dns.getZone('in-addr.arpa.')
 
-        self._log('Collecting IP addresses...')
+        self.logger.info('Collecting IP addresses...')
         for ([scope, type, name], obj) in reg.getAll().items():
             if type != 'rnode' and type != 'hnode': continue
-            self._log('Collecting {}/{}/{}...'.format(scope, type, name))
+            self.logger.info('Collecting {}/{}/{}...'.format(scope, type, name))
 
             if scope == 'ix':
                 scope = name

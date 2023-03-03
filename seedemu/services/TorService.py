@@ -492,3 +492,7 @@ class TorService(Service):
 
     def _createServer(self) -> Server:
         return TorServer()
+
+    def print(self, indent: str):
+        out = ' ' * indent
+        out += 'TorService\n'

@@ -1,4 +1,6 @@
-class Printable(object):
+from abc import ABCMeta, abstractmethod
+
+class Printable(metaclass=ABCMeta):
     """!
     @brief Printable class.
 
@@ -11,6 +13,7 @@ class Printable(object):
         """
         super().__init__()
 
+    @abstractmethod
     def print(self, indentation: int = 0) -> str:
         """!
         @brief get printable string.

@@ -8,6 +8,8 @@ class DefaultBgpLookingGlassServiceMerger(ServiceMerger):
     This is the default implementation which invokes the default service merger
     to handler merging installation targets.
     """
+    def __init__(self):
+        super().__init__()
 
     def getTargetType(self) -> str:
         return 'BgpLookingGlassServiceLayer'

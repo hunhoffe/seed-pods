@@ -192,7 +192,7 @@ class OpenVpnRemoteAccessProvider(RemoteAccessProvider):
         return 'OpenVpn'
 
     def configureRemoteAccess(self, emulator: Emulator, netObject: Network, brNode: Node, brNet: Network):
-        self._log('setting up OpenVPN remote access for {} in AS{}...'.format(netObject.getName(), brNode.getAsn()))
+        self.logger.info('setting up OpenVPN remote access for {} in AS{}...'.format(netObject.getName(), brNode.getAsn()))
 
         brNode.addSoftware('openvpn')
         brNode.addSoftware('bridge-utils')

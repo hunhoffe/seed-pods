@@ -71,7 +71,7 @@ class AddressAssignmentConstraint(Printable):
         @param routerEnd end address offset of router nodes.
         @param routerStep end step of router address.
         """
-
+        super().__init__()
         self.__hostStart = hostStart
         self.__hostEnd = hostEnd
         self.__hostStep = hostStep
@@ -87,7 +87,6 @@ class AddressAssignmentConstraint(Printable):
         self.__ipRanges['dhcp'] = (dhcpStart, dhcpEnd)
         self.__ipRanges['router'] = (routerStart, routerEnd) if routerStep > 0 else (routerEnd, routerStart)
         self.__checkIpConflict()
-
 
     def setHostIpRange(self, hostStart:int , hostEnd: int, hostStep: int):
         """!

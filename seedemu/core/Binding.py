@@ -1,5 +1,6 @@
 from __future__ import annotations
 from .Printable import Printable
+from .Logger import get_logger
 from .Emulator import Emulator
 from .Node import Node
 from .BaseSystem import BaseSystem
@@ -28,7 +29,8 @@ class Action(Enum):
     # (like resolvVnode) is not possible.
     NEW = 3
 
-class Filter(Printable):
+# TODO: filter should be printable
+class Filter:
     """!
     @brief the Filter class.
 
@@ -67,6 +69,7 @@ class Filter(Printable):
         Default to None (always allow).
         @param allowBound (optional) allow re-use bound nodes. Default to false.
         """
+        super().__init__()
 
         ## asn of node
         self.asn = asn
@@ -86,7 +89,8 @@ class Filter(Printable):
         ## allow re-use already bound nodes
         self.allowBound = allowBound
 
-class Binding(Printable):
+# TODO: binding should be printable
+class Binding:
     """!
     @brief Binding class. 
 
@@ -107,6 +111,7 @@ class Binding(Printable):
         @param filter (optional) filter. Default to empty filter (all physical
         nodes).
         """
+        super().__init__()
 
         ## regexp of virtual node name that should be handled by this binding.
         self.source = source
@@ -116,6 +121,9 @@ class Binding(Printable):
 
         ## physical node filter.
         self.filter = filter
+
+        ## initialize logger
+        self.logger = get_logger(self.__class__.__name__)
 
     def __filterBaseSystemConflict(self, vnode:str, node:Node, emulator:Emulator) -> bool:
         """!
@@ -146,7 +154,7 @@ class Binding(Printable):
 
         @returns node created.
         """
-        self.__log('binding: NEW: try to create a node matching filter condition(s)...')
+        self.logger.info('NEW: try to create a node matching filter condition(s)...')
 
         reg = emulator.getRegistry()
 
@@ -158,14 +166,14 @@ class Binding(Printable):
         assert f.asn == None or f.asn in base.getAsns(), 'binding: NEW: AS{} is set in filter but not in emulator.'.format(f.asn)
         assert f.ip == None or f.prefix == None, 'binding: NEW: both ip and prefix is set. Please set only one of them.'
 
-        if f.allowBound: self.__log('binding: NEW: WARN: allowBound has not effect when using Action.NEW')
+        if f.allowBound: self.logger.warn('allowBound has not effect when using Action.NEW')
 
         asn = f.asn
         netName = None
 
         # ip is set: find net matching the condition.
         if f.ip != None:
-            self.__log('binding: NEW: IP {} is given to host: finding networks with this IP in range.'.format(f.ip))
+            self.logger.info('NEW: IP {} is given to host: finding networks with this IP in range.'.format(f.ip))
             for _asn in base.getAsns():
                 hit = False
                 if f.asn != None and f.asn != _asn: continue
@@ -175,7 +183,7 @@ class Binding(Printable):
                     netObject = asObject.getNetwork(net)
 
                     if IPv4Address(f.ip) in netObject.getPrefix():
-                        self.__log('match found: as{}/{}'.format(_asn, net))
+                        self.logger.info('match found: as{}/{}'.format(_asn, net))
                         asn = _asn
                         netName = net
                         hit = True
@@ -185,7 +193,7 @@ class Binding(Printable):
         
         # prefix is set: find net matching the condition
         if f.prefix != None:
-            self.__log('binding: NEW: Prefix {} is given to host: finding networks in range.'.format(f.prefix))
+            self.logger.info('NEW: Prefix {} is given to host: finding networks in range.'.format(f.prefix))
 
             for _asn in base.getAsns():
                 hit = False
@@ -196,7 +204,7 @@ class Binding(Printable):
                     netObject = asObject.getNetwork(net)
 
                     if IPv4Network(f.prefix).overlaps(netObject.getPrefix()):
-                        self.__log('binding: NEW: match found: as{}/{}'.format(_asn, net))
+                        self.logger.info('NEW: match found: as{}/{}'.format(_asn, net))
                         asn = _asn
                         netName = net
                         hit = True
@@ -210,14 +218,14 @@ class Binding(Printable):
         # no as selected: randomly choose one
         if asn == None:
             asn = random.choice(base.getAsns())
-            self.__log('binding: NEW: asn not set, using random as: {}'.format(asn))
+            self.logger.info('NEW: asn not set, using random as: {}'.format(asn))
 
         asObject = base.getAutonomousSystem(asn)
 
         # no net selected: randomly choose one
         if netName == None:
             netName = random.choice(asObject.getNetworks())
-            self.__log('binding: NEW: ip/prefix not set, using random net: as{}/{}'.format(asn, netName))
+            self.logger.info('NEW: ip/prefix not set, using random net: as{}/{}'.format(asn, netName))
 
 
         nodeName = f.nodeName
@@ -225,9 +233,9 @@ class Binding(Printable):
         # no nodename given: randomly create one
         if nodeName == None:
             nodeName = ''.join(random.choice(string.ascii_lowercase) for i in range(10))
-            self.__log('binding: NEW: nodeName not set, using random name: {}'.format(nodeName))
+            self.logger.info('NEW: nodeName not set, using random name: {}'.format(nodeName))
 
-        self.__log('binding: NEW: creating new host...'.format(nodeName))
+        self.logger.info('NEW: creating new host...'.format(nodeName))
 
         # create the host in as
         host = asObject.createHost(nodeName)
@@ -271,7 +279,7 @@ class Binding(Printable):
         @return candidate node, or none if not found.
         """
         if not self.shoudBind(vnode): return None
-        self.__log('looking for binding for {}'.format(vnode))
+        self.logger.info('looking for binding for {}'.format(vnode))
 
         if self.action == Action.NEW:
             if peek: return None
@@ -290,14 +298,14 @@ class Binding(Printable):
             node: Node = obj
             filter = self.filter
 
-            self.__log('trying node as{}/{}...'.format(scope, name  ))
+            self.logger.info('trying node as{}/{}...'.format(scope, name  ))
 
             if filter.asn != None and node.getAsn() != filter.asn:
-                self.__log('node asn ({}) != filter asn ({}), trying next node.'.format(node.getAsn(), filter.asn))
+                self.logger.info('node asn ({}) != filter asn ({}), trying next node.'.format(node.getAsn(), filter.asn))
                 continue
             
             if filter.nodeName != None and not re.compile(filter.nodeName).match(name):
-                self.__log('node name ({}) cat\'t match filter name ({}), trying next node.'.format(name, filter.nodeName))
+                self.logger.info('node name ({}) cat\'t match filter name ({}), trying next node.'.format(name, filter.nodeName))
                 continue
 
             if filter.ip != None:
@@ -307,7 +315,7 @@ class Binding(Printable):
                         has_match = True
                         break
                 if not has_match:
-                    self.__log('node as{}/{} does not have IP {}, trying next node.'.format(scope, name, filter.ip))
+                    self.logger.info('node as{}/{} does not have IP {}, trying next node.'.format(scope, name, filter.ip))
                     continue
 
             if filter.prefix != None:
@@ -318,26 +326,26 @@ class Binding(Printable):
                         has_match = True
                         break
                 if not has_match:
-                    self.__log('node as{}/{} not in prefix {}, trying next node.'.format(scope, name, filter.prefix))
+                    self.logger.info('node as{}/{} not in prefix {}, trying next node.'.format(scope, name, filter.prefix))
                     continue
 
             if filter.custom != None and not filter.custom(vnode, node):
-                self.__log('custom function returned false for node as{}/{}, trying next node.'.format(scope, name))
+                self.logger.info('custom function returned false for node as{}/{}, trying next node.'.format(scope, name))
                 continue
 
             if node.hasAttribute('bound') and not filter.allowBound and not peek:
-                self.__log('node as{}/{} is already bound and re-bind is not allowed, trying next node.'.format(scope, name))
+                self.logger.info('node as{}/{} is already bound and re-bind is not allowed, trying next node.'.format(scope, name))
                 continue
             
             if not self.__filterBaseSystemConflict(vnode, node, emulator):
-                self.__log('node as{}/{} base_system is not compatible'.format(scope, name))
+                self.logger.info('node as{}/{} base_system is not compatible'.format(scope, name))
                 continue
             
 
-            self.__log('node as{}/{} added as candidate. looking for more candidates.'.format(scope, name))
+            self.logger.info('node as{}/{} added as candidate. looking for more candidates.'.format(scope, name))
 
             if self.action == Action.FIRST:
-                self.__log('{} as{}/{}.'.format('peek: picked' if peek else 'bound to', node.getAsn(), node.getName()))
+                self.logger.info('{} as{}/{}.'.format('peek: picked' if peek else 'bound to', node.getAsn(), node.getName()))
                 if not peek: node.setAttribute('bound', True)
                 return node
         
@@ -352,15 +360,8 @@ class Binding(Printable):
         if self.action == Action.RANDOM: node = random.choice(candidates)
 
         if node != None: 
-            self.__log('{} as{}/{}.'.format('peek: picked' if peek else 'bound to', node.getAsn(), node.getName()))
+            self.logger.info('{} as{}/{}.'.format('peek: picked' if peek else 'bound to', node.getAsn(), node.getName()))
             if not peek: node.setAttribute('bound', True)
 
         return node
 
-    def __log(self, message: str):
-        """!
-        @brief log to stderr.
-
-        @param message message.
-        """
-        print('==== Binding: {}: {}'.format(self.source, message), file=stderr)

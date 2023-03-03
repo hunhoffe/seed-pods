@@ -44,6 +44,13 @@ class AutonomousSystem(Printable, Graphable, Configurable):
         self.__subnets = None if asn > 255 else list(IPv4Network(subnetTemplate.format(asn)).subnets(new_prefix = 24))
         self.__name_servers = []
 
+    def getName(self) -> str:
+        """!
+        @brief Get name of the autonomous system.
+        @returns name the name of the object type
+        """
+        return self.__class__.__name__
+
     def setNameServers(self, servers: List[str]) -> AutonomousSystem:
         """!
         @brief set recursive name servers to use on nodes in this AS. Overwrites

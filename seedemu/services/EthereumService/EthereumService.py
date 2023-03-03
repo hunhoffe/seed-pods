@@ -5,6 +5,7 @@ from .EthUtil import Genesis, EthAccount, AccountStructure
 from .EthereumServer import EthereumServer, PoAServer, PoWServer, PoSServer
 from os import mkdir, path, makedirs, rename
 from seedemu.core import Node, Service, Server, Emulator
+from seedemu.core.Logger import get_logger
 from typing import Dict, List
 from sys import stderr
 
@@ -66,21 +67,22 @@ class Blockchain:
         self.__terminal_total_difficulty = 20
         self.__target_aggregater_per_committee = 2
         self.__target_committee_size = 3
+        self.logger = get_logger(self.__class__.__name__)
 
     def _doConfigure(self, node:Node, server:EthereumServer):
-        self._log('configuring as{}/{} as an eth node...'.format(node.getAsn(), node.getName()))
+        self.logger.info('configuring as{}/{} as an eth node...'.format(node.getAsn(), node.getName()))
 
         ifaces = node.getInterfaces()
         assert len(ifaces) > 0, 'EthereumService::_doConfigure(): node as{}/{} has not interfaces'.format()
         addr = '{}:{}'.format(str(ifaces[0].getAddress()), server.getBootNodeHttpPort())
         
         if server.isBootNode():
-            self._log('adding as{}/{} as consensus-{} bootnode...'.format(node.getAsn(), node.getName(), self.__consensus.value))
+            self.logger.info('adding as{}/{} as consensus-{} bootnode...'.format(node.getAsn(), node.getName(), self.__consensus.value))
             self.__boot_node_addresses.append(addr)
         
         if self.__consensus == ConsensusMechanism.POS:
             if server.isStartMiner():
-                self._log('adding as{}/{} as consensus-{} miner...'.format(node.getAsn(), node.getName(), self.__consensus.value))
+                self.logger.info('adding as{}/{} as consensus-{} miner...'.format(node.getAsn(), node.getName(), self.__consensus.value))
                 self.__miner_node_address.append(str(ifaces[0].getAddress())) 
             if server.isBeaconSetupNode():
                 self.__beacon_setup_node_address = '{}:{}'.format(ifaces[0].getAddress(), server.getBeaconSetupHttpPort())
@@ -403,14 +405,6 @@ class Blockchain:
         """
         return self.__target_committee_size
 
-    def _log(self, message: str) -> None:
-        """!
-        @brief Log to stderr.
-
-        @returns None.
-        """
-        print("==== Blockchain Sub Layer: {}".format(message), file=stderr)
-
 
 class EthereumService(Service):
     """!
@@ -472,7 +466,7 @@ class EthereumService(Service):
     def _createSharedFolder(self):
         if path.exists(self.__save_path):
             if self.__override:
-                self._log('eth_state folder "{}" already exist, overriding.'.format(self.__save_path))
+                self.logger.info('eth_state folder "{}" already exist, overriding.'.format(self.__save_path))
                 i = 1
                 while True:
                     rename_save_path = "{}-{}".format(self.__save_path, i)
@@ -482,12 +476,12 @@ class EthereumService(Service):
                     else:
                         i = i+1
             else:
-                self._log('eth_state folder "{}" already exist. Set "override = True" when calling compile() to override.'.format(self.__save_path))
+                self.logger.info('eth_state folder "{}" already exist. Set "override = True" when calling compile() to override.'.format(self.__save_path))
                 exit(1)
         mkdir(self.__save_path)
         
     def _doInstall(self, node: Node, server: EthereumServer):
-        self._log('installing eth on as{}/{}...'.format(node.getAsn(), node.getName()))
+        self.logger.info('installing eth on as{}/{}...'.format(node.getAsn(), node.getName()))
 
         server.install(node, self)
 

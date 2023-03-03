@@ -8,6 +8,7 @@ from .EthTemplates import GenesisFileTemplates
 from web3 import Web3
 from sys import stderr
 from time import time
+from . . .core.Logger import get_logger
 
 class Genesis():
     """!
@@ -148,6 +149,7 @@ class EthAccount():
     """
     @brief Ethereum Local Account.
     """
+    logger = get_logger("EthAccount")
     
     @staticmethod 
     def importAccount(keyfilePath: str, balance:int, password = "admin"):
@@ -155,7 +157,7 @@ class EthAccount():
         @brief import account from keyfile
         """
         from eth_account import Account
-        EthAccount._log('importing eth account...')
+        EthAccount.logger.info('importing eth account...')
         assert path.exists(keyfilePath), "EthAccount::__importAccount: keyFile does not exist. path : {}".format(keyfilePath)
         f = open(keyfilePath, "r")
         keyfileContent = f.read()
@@ -183,7 +185,7 @@ class EthAccount():
         from eth_account import Account
         Account.enable_unaudited_hdwallet_features()
 
-        EthAccount._log('creating node_{} emulator account {} from mnemonic...'.format(id, index))
+        EthAccount.logger.info('creating node_{} emulator account {} from mnemonic...'.format(id, index))
         acct = Account.from_mnemonic(mnemonic, account_path=ETH_ACCOUNT_KEY_DERIVATION_PATH.format(id=id, index=index))
         address = Web3.toChecksumAddress(acct.address)
         
@@ -208,7 +210,7 @@ class EthAccount():
         from eth_account import Account
         Account.enable_unaudited_hdwallet_features()
 
-        EthAccount._log('creating local account {} from mnemonic...'.format(index))
+        EthAccount.logger.info('creating local account {} from mnemonic...'.format(index))
         acct = Account.from_mnemonic(mnemonic, account_path=LOCAL_ACCOUNT_KEY_DERIVATION_PATH.format(index=index))
         address = Web3.toChecksumAddress(acct.address)
 
@@ -223,13 +225,6 @@ class EthAccount():
             index += 1
 
         return accounts
-
-    @staticmethod
-    def _log(message: str) -> None:
-        """!
-        @brief Log to stderr.
-        """
-        print("==== EthAccount: {}".format(message), file=stderr)
         
 
 class SmartContract():

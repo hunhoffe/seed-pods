@@ -56,17 +56,17 @@ class Base(Layer, Graphable):
         return "Base"
 
     def configure(self, emulator: Emulator):
-        self._log('registering nodes...')
+        self.logger.info('registering nodes...')
         for asobj in self.__ases.values():
             if len(asobj.getNameServers()) == 0:
                 asobj.setNameServers(self.__name_servers)
 
             asobj.registerNodes(emulator)
 
-        self._log('setting up internet exchanges...')
+        self.logger.info('setting up internet exchanges...')
         for ix in self.__ixes.values(): ix.configure(emulator)
 
-        self._log('setting up autonomous systems...')
+        self.logger.info('setting up autonomous systems...')
         for asobj in self.__ases.values(): asobj.configure(emulator)
 
     def render(self, emulator: Emulator) -> None:

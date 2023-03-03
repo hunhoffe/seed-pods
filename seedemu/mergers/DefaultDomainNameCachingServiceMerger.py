@@ -9,6 +9,8 @@ class DefaultDomainNameCachingServiceMerger(ServiceMerger):
     to handler merging installation targets, and set auto root to true if any one
     of the inputs have it set to true.
     """
+    def __init__(self):
+        super().__init__()
 
     def _createService(self) -> DomainNameCachingService:
         return DomainNameCachingService()

@@ -153,7 +153,7 @@ class Ospf(Layer):
             stubs: List[str] = ['dummy0']
             active: List[str] = []
 
-            self._log('setting up OSPF for router as{}/{}...'.format(scope, name))
+            self.logger.info('setting up OSPF for router as{}/{}...'.format(scope, name))
             for iface in router.getInterfaces():
                 net = iface.getNet()
 

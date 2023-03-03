@@ -27,7 +27,7 @@ class ResolvConfHook(Hook):
         reg = emulator.getRegistry()
         for ((scope, type, name), object) in reg.getAll().items():
             if type != 'hnode': continue
-            self._log('setting resolv.conf for as{}/{}'.format(scope, name))
+            self.logger.info('setting resolv.conf for as{}/{}'.format(scope, name))
             host: Node = object
             host.appendStartCommand(': > /etc/resolv.conf')
             for s in self.__servers:

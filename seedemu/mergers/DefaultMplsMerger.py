@@ -5,9 +5,8 @@ class DefaultMplsMerger(Merger):
     """!
     @brief default MPLS layer merging implementation.
     """
-
-    def getName(self) -> str:
-        return 'DefaultMplsMerger'
+    def __init__(self):
+        super().__init__()
 
     def getTargetType(self) -> str:
         return 'MplsLayer'

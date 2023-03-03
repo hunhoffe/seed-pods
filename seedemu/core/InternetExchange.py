@@ -27,7 +27,7 @@ class InternetExchange(Printable, Configurable):
         @param prefix (optional) prefix to use as peering LAN.
         @param aac (option) AddressAssignmentConstraint to use.
         """
-
+        super().__init__()
         self.__id = id
 
         assert prefix != "auto" or self.__id <= 255, "can't use auto: id > 255"

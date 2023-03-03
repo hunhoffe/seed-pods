@@ -1,14 +1,17 @@
 from __future__ import annotations
+from abc import ABCMeta, abstractmethod
+from typing import Dict, List, Set, Tuple
+
 from .Layer import Layer
 from .Node import Node
 from .Printable import Printable
 from .Emulator import Emulator
 from .enums import NodeRole
 from .Binding import Binding
-from typing import Dict, List, Set, Tuple
+from .Logger import get_logger
 from .BaseSystem import BaseSystem
 
-class Server(Printable):
+class Server(Printable, metaclass=ABCMeta):
     """!
     @brief Server class.
 
@@ -20,7 +23,9 @@ class Server(Printable):
         super().__init__()
         self.__class_names = []
         self._base_system = BaseSystem.DEFAULT
+        self.logger = get_logger(self.__class__.__name__)
 
+    @abstractmethod
     def install(self, node: Node):
         """!
         @brief Install the server on node.
@@ -64,7 +69,7 @@ class Server(Printable):
 
         return self
         
-class Service(Layer):
+class Service(Layer, metaclass=ABCMeta):
     """!
     @brief Service base class.
 
@@ -80,6 +85,7 @@ class Service(Layer):
         self._pending_targets = {}
         self.__targets = set()
 
+    @abstractmethod
     def _createServer(self) -> Server:
         """!
         @brief Create a new server.
@@ -171,9 +177,9 @@ class Service(Layer):
     def configure(self, emulator: Emulator):
         for (vnode, server) in self._pending_targets.items():
             pnode = emulator.getBindingFor(vnode)
-            self._log('looking for binding for {}...'.format(vnode))
+            self.logger.info('looking for binding for {}...'.format(vnode))
             self.__configureServer(server, pnode)
-            self._log('configure: bound {} to as{}/{}.'.format(vnode, pnode.getAsn(), pnode.getName()))
+            self.logger.info('configure: bound {} to as{}/{}.'.format(vnode, pnode.getAsn(), pnode.getName()))
     
     def render(self, emulator: Emulator):
         for (server, node) in self.__targets:

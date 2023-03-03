@@ -1,5 +1,7 @@
 from __future__ import annotations
+from abc import abstractmethod, ABCMeta
 from typing import List, Dict
+
 from .Printable import Printable
 from .Registry import Registry, Registrable
 from .Emulator import Emulator
@@ -98,6 +100,7 @@ class Graph(Printable):
         @param name name.
         @param directed directed graph?
         """
+        super().__init__()
 
         ## name of the graph.
         self.name = name
@@ -257,7 +260,7 @@ class Graph(Printable):
 
         return out
 
-class Graphable(Registrable):
+class Graphable(Registrable, metaclass=ABCMeta):
     """!
     @brief Graphable. All layers that can produce graphs will have this
     prototype.
@@ -271,6 +274,7 @@ class Graphable(Registrable):
         """!
         @brief Graphable constructor.
         """
+        super().__init__()
         self.__graphs = {}
         self.__graphs_created = False
 
@@ -287,6 +291,7 @@ class Graphable(Registrable):
         self.__graphs[name] = g
         return g
     
+    @abstractmethod
     def getName(self) -> str:
         """!
         @brief Get name of this graph provider.
@@ -313,6 +318,7 @@ class Graphable(Registrable):
         """
         return self.__graphs
 
+    @abstractmethod
     def _doCreateGraphs(self, emulator: Emulator):
         """!
         @brief handle graph creation, should be implemented by all graphable

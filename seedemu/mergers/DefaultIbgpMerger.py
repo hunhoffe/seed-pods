@@ -5,9 +5,8 @@ class DefaultIbgpMerger(Merger):
     """!
     @brief default IBGP layer merging implementation.
     """
-
-    def getName(self) -> str:
-        return 'DefaultIbgpMerger'
+    def __init__(self):
+        super().__init__()
 
     def getTargetType(self) -> str:
         return 'IbgpLayer'

@@ -7,9 +7,8 @@ class DefaultDnssecMerger(Merger):
 
     This merger merges zone names with DNSSEC enabled.
     """
-
-    def getName(self) -> str:
-        return 'DefaultDnssecMerger'
+    def __init__(self):
+        super().__init__()
 
     def getTargetType(self) -> str:
         return 'DnssecLayer'

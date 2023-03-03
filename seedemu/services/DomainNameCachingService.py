@@ -131,6 +131,18 @@ class DomainNameCachingServer(Server, Configurable):
                 hnode.appendStartCommand('cat /etc/resolv.conf.new > /etc/resolv.conf')
             hnode.appendFile('/etc/resolv.conf.new', 'nameserver {}\n'.format(addr))
 
+    def print(self, indent: int) -> str:
+        # TODO: this was mostly copied from DomainNameService, should be written more carefully.
+        out = ' ' * indent
+        out += 'Pending Forward Zones\n'
+        indent += 4
+        for (zone, _) in self.__pending_forward_zones:
+            out += ' ' * indent
+            if zone == '' or zone[-1] != '.': zone += '.'
+            out += '{}\n'.format(zone)
+
+        return out
+
 class DomainNameCachingService(Service):
     """!
     @brief Caching DNS (i.e., Local DNS)

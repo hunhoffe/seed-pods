@@ -90,6 +90,7 @@ class Registry(Printable):
         """!
         @brief create a new Registry.
         """
+        super().__init__()
         self.__objects = {}
 
     def register(self, scope: str, type: str, name: str, obj: Registrable) -> Registrable:
@@ -199,6 +200,7 @@ class ScopedRegistry(Registry):
         @param scope scope to bind to.
         @param parent parent Registry object.
         """
+        super().__init__()
         self.__scope = scope
         self.__reg = parent
 

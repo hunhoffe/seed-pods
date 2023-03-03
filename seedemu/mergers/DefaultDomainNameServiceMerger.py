@@ -10,11 +10,13 @@ class DefaultDomainNameServiceMerger(ServiceMerger):
     to handler merging installation targets, merge the zone tree, and combine
     masters.
     """
+    def __init__(self):
+        super().__init__()
 
     def __mergeZone(self, a: Zone, b: Zone, dst: Zone, position: str = ''):
         names = set()
 
-        self._log('merging zone: {}'.format('(root)' if position == '' else position))
+        self.logger.info('merging zone: {}'.format('(root)' if position == '' else position))
 
         # merge regular records
         for r in a.getRecords():
@@ -37,10 +39,10 @@ class DefaultDomainNameServiceMerger(ServiceMerger):
 
         # look for all subzones
         for k in a.getSubZones().keys():
-            self._log('{}.{} zone found in first emulator.'.format(k, position))
+            self.logger.info('{}.{} zone found in first emulator.'.format(k, position))
             names.add(k)
         for k in b.getSubZones().keys():
-            self._log('{}.{} zone found in second emulator.'.format(k, position))
+            self.logger.info('{}.{} zone found in second emulator.'.format(k, position))
             names.add(k)
         
         # for all subzones,
@@ -59,9 +61,6 @@ class DefaultDomainNameServiceMerger(ServiceMerger):
 
     def _createService(self) -> DomainNameService:
         return DomainNameService()
-
-    def getName(self) -> str:
-        return 'DefaultDomainNameServiceMerger'
 
     def getTargetType(self) -> str:
         return 'DomainNameServiceLayer'
