@@ -208,14 +208,11 @@ class GcpDistributedDocker(Compiler):
     deploying the lab to GCP.
     """
 
-    def getName(self) -> str:
-        return 'GcpDistributedDocker'
-
     def __init_tf(self):
         """!
         @brief Get files required by Terraform ready.
         """
-        self._log('initializing terraform environment...')
+        self.logger.info('initializing terraform environment...')
         mkdir('_tf_scripts')
         for file in ['_tf_scripts/get-swmtkn', '_tf_scripts/ssh-keygen', 'variables.tf', 'main.tf', 'network.tf', 'data.tf']:
             print(GcpDistributedDockerFileTemplates[file], file=open(file, 'w'))
@@ -227,7 +224,7 @@ class GcpDistributedDocker(Compiler):
         """!
         @brief Generate TF config for docker hosts.
         """
-        self._log('generating terraform configurations...')
+        self.logger.info('generating terraform configurations...')
 
         print(GcpDistributedDockerFileTemplates['manager_tf_template'].format(
             machineType = "f1-micro" # todo
@@ -250,6 +247,6 @@ class GcpDistributedDocker(Compiler):
         registry = emulator.getRegistry()
         dcomp = DistributedDocker()
         self.__init_tf()
-        self._log('generating container configurations...')
+        self.logger.info('generating container configurations...')
         dcomp.compile(emulator, '_containers')
         self.__make_tf(registry)

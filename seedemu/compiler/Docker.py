@@ -386,8 +386,7 @@ class Docker(Compiler):
                 priority = 10
             self.addImage(image, priority=priority)
 
-    def getName(self) -> str:
-        return "Docker"
+        super().__init__()
 
     def addImage(self, image: DockerImage, priority: int = -1) -> Docker:
         """!
@@ -501,7 +500,7 @@ class Docker(Compiler):
 
         for (key, val) in softGroups.items():
             maxIter = groupIter[key]
-            self._log('grouping software for image "{}" - {} references.'.format(key, maxIter))
+            self.logger.info('grouping software for image "{}" - {} references.'.format(key, maxIter))
             step = 1
 
             for commRequired in range(maxIter, 0, -1):
@@ -521,7 +520,7 @@ class Docker(Compiler):
                 
 
                 if len(currentTier) > 0:
-                    self._log('the following software has been grouped together in step {}: {} since they are referenced by {} nodes.'.format(step, currentTier, len(currentTierNodes)))
+                    self.logger.info('the following software has been grouped together in step {}: {} since they are referenced by {} nodes.'.format(step, currentTier, len(currentTierNodes)))
                     step += 1
                 
     
@@ -544,12 +543,12 @@ class Docker(Compiler):
 
             (image, _) = self.__images[image_name]
 
-            self._log('image-per-node configured, using {}'.format(image.getName()))
+            self.logger.info('image-per-node configured, using {}'.format(image.getName()))
             return (image, nodeSoft - image.getSoftware())
 
         # Should we keep this feature? 
         if self.__disable_images:
-            self._log('disable-imaged configured, using base image.')
+            self.logger.info('disable-imaged configured, using base image.')
             (image, _) = self.__images['ubuntu:20.04']
             return (image, nodeSoft - image.getSoftware())
 
@@ -559,7 +558,7 @@ class Docker(Compiler):
 
             (image, _) = self.__images[self.__forced_image]
 
-            self._log('force-image configured, using image: {}'.format(image.getName()))
+            self.logger.info('force-image configured, using image: {}'.format(image.getName()))
 
             return (image, nodeSoft - image.getSoftware())
         
@@ -822,7 +821,7 @@ class Docker(Compiler):
 
                 address = d_address
                 
-                self._log('using self-managed network: using dummy address {}/{} for {}/{} on as{}/{}'.format(
+                self.logger.info('using self-managed network: using dummy address {}/{} for {}/{} on as{}/{}'.format(
                     d_address, d_prefix.prefixlen, iface.getAddress(), iface.getNet().getPrefix().prefixlen,
                     node.getAsn(), node.getName()
                 ))
@@ -962,7 +961,7 @@ class Docker(Compiler):
             pfx = next(self.__dummy_network_pool)
             net.setAttribute('dummy_prefix', pfx)
             net.setAttribute('dummy_prefix_index', 2)
-            self._log('self-managed network: using dummy prefix {}'.format(pfx))
+            self.logger.info('self-managed network: using dummy prefix {}'.format(pfx))
 
         net_prefix = self._contextToPrefix(scope, 'net')
         if net.getType() == NetworkType.Bridge: net_prefix = ''
@@ -986,7 +985,7 @@ class Docker(Compiler):
         dummies = ''
 
         for image in self._used_images:
-            self._log('adding dummy service for image {}...'.format(image))
+            self.logger.info('adding dummy service for image {}...'.format(image))
 
             imageDigest = md5(image.encode('utf-8')).hexdigest()
             
@@ -1009,28 +1008,28 @@ class Docker(Compiler):
         for ((scope, type, name), obj) in registry.getAll().items():
 
             if type == 'net':
-                self._log('creating network: {}/{}...'.format(scope, name))
+                self.logger.info('creating network: {}/{}...'.format(scope, name))
                 self.__networks += self._compileNet(obj)
 
         for ((scope, type, name), obj) in registry.getAll().items():
             if type == 'rnode':
-                self._log('compiling router node {} for as{}...'.format(name, scope))
+                self.logger.info('compiling router node {} for as{}...'.format(name, scope))
                 self.__services += self._compileNode(obj)
 
             if type == 'hnode':
-                self._log('compiling host node {} for as{}...'.format(name, scope))
+                self.logger.info('compiling host node {} for as{}...'.format(name, scope))
                 self.__services += self._compileNode(obj)
 
             if type == 'rs':
-                self._log('compiling rs node for {}...'.format(name))
+                self.logger.info('compiling rs node for {}...'.format(name))
                 self.__services += self._compileNode(obj)
 
             if type == 'snode':
-                self._log('compiling service node {}...'.format(name))
+                self.logger.info('compiling service node {}...'.format(name))
                 self.__services += self._compileNode(obj)
 
         if self.__internet_map_enabled:
-            self._log('enabling seedemu-internet-map...')
+            self.logger.info('enabling seedemu-internet-map...')
 
             self.__services += DockerCompilerFileTemplates['seedemu_internet_map'].format(
                 clientImage = SEEDEMU_INTERNET_MAP_IMAGE,
@@ -1038,7 +1037,7 @@ class Docker(Compiler):
             )
         
         if self.__ether_view_enabled:
-            self._log('enabling seedemu-ether-view...')
+            self.logger.info('enabling seedemu-ether-view...')
 
             self.__services += DockerCompilerFileTemplates['seedemu_ether_view'].format(
                 clientImage = SEEDEMU_ETHER_VIEW_IMAGE,
@@ -1054,7 +1053,7 @@ class Docker(Compiler):
                 dirName = image.getDirName()
             )
 
-        self._log('creating docker-compose.yml...'.format(scope, name))
+        self.logger.info('creating docker-compose.yml...'.format(scope, name))
         print(DockerCompilerFileTemplates['compose'].format(
             services = self.__services,
             networks = self.__networks,

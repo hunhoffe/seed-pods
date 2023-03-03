@@ -50,9 +50,6 @@ class DistributedDocker(Docker):
         """
         super().__init__(namingScheme)
 
-    def getName(self) -> str:
-        return 'DistributedDocker'
-
     def __compileIxNetMaster(self, net) -> str:
         (scope, _, _) = net.getRegistryInfo()
         return DistributedDockerCompilerFileTemplates['compose_network_ix_master'].format(
@@ -89,28 +86,28 @@ class DistributedDocker(Docker):
                 if _scope != scope: continue
 
                 if type == 'rnode':
-                    self._log('compiling router node {} for as{}...'.format(name, scope))
+                    self.logger.info('compiling router node {} for as{}...'.format(name, scope))
                     services += self._compileNode(obj)
 
                 if type == 'hnode':
-                    self._log('compiling host node {} for as{}...'.format(name, scope))
+                    self.logger.info('compiling host node {} for as{}...'.format(name, scope))
                     services += self._compileNode(obj)
 
                 if type == 'rs':
-                    self._log('compiling rs node for {}...'.format(name))
+                    self.logger.info('compiling rs node for {}...'.format(name))
                     services += self._compileNode(obj)
 
                 if type == 'snode':
-                    self._log('compiling service node {}...'.format(name))
+                    self.logger.info('compiling service node {}...'.format(name))
                     services += self._compileNode(obj)
 
                 if type == 'net':
-                    self._log('creating network: {}/{}...'.format(scope, name))
+                    self.logger.info('creating network: {}/{}...'.format(scope, name))
                     networks += self.__compileIxNetMaster(obj) if scope == 'ix' else self._compileNet(obj)
 
             if len(services) > 0 or len(networks) > 0 :
                 if scope != 'ix': networks += ix_nets
-                self._log('creating docker-compose.yml...'.format(scope, name))
+                self.logger.info('creating docker-compose.yml...'.format(scope, name))
                 print(DockerCompilerFileTemplates['compose'].format(
                     services = services,
                     networks = networks,
