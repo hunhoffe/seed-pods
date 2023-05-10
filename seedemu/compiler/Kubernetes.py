@@ -2,6 +2,7 @@ import re
 import yaml
 import json
 import os.path
+import ipaddress
 from typing import Dict
 
 KubernetesCompilerFileTemplates: Dict[str, str] = {}
@@ -15,12 +16,12 @@ metadata:
 spec:
   config: '{{
       "cniVersion": "0.3.0",
-      "type": "macvlan",
-      "master": "{interface}",
-      "mode": "bridge",
-      "ipam": {{
-        "type": "static"
-      }}
+      "type": "vxlan",
+      "dev": "{interface}",
+      "vni": {vni},
+      "group": "{group}",
+      "dstPort": 4789,
+      "cidr": "{cidr}"
     }}'
 """
 
@@ -60,6 +61,7 @@ RoleLabel = "org.seedsecuritylabs.seedemu.meta.role"
 ClassLabel = "org.seedsecuritylabs.seedemu.meta.class"
 AsnLabel = "org.seedsecuritylabs.seedemu.meta.asn"
 
+NetworkMapping: Dict[str, str] = {} 
 
 def getCompatibleName(name: str) -> str:
     return name.replace('_', '-').replace('.', '-').replace(' ', '-')
@@ -103,6 +105,11 @@ def isExchange(networkName: str) -> bool:
 
 def isServiceNetwork(networkName: str) -> bool:
     return networkName == "000_svc"
+
+def getShortNetworkName(networkName: str) -> str:
+    if networkName not in NetworkMapping:
+        NetworkMapping[networkName] = 'net' + str(len(NetworkMapping))
+    return NetworkMapping[networkName]
 
 
 class ServiceTemplate(object):
@@ -168,13 +175,13 @@ class NetworkAnnotations(object):
         for _, annotation in self.__annotations.items():
             interface = annotation['interface']
             if isExchange(interface):
-                annotation['name'] = 'net-ix-{}'.format(
-                    getCompatibleName(interface))
+                annotation['name'] = getShortNetworkName('net-ix-{}'.format(
+                    getCompatibleName(interface)))
             elif isServiceNetwork(interface):
-                annotation['name'] = getCompatibleName(interface)
+                annotation['name'] = getShortNetworkName(getCompatibleName(interface))
             else:
-                annotation['name'] = 'net-{}-{}'.format(
-                    asn, getCompatibleName(interface))
+                annotation['name'] = getShortNetworkName('net-{}-{}'.format(
+                    asn, getCompatibleName(interface)))
 
     def getAnnotations(self) -> str:
         return json.dumps(list(self.__annotations.values()), separators=(',', ':'))
@@ -188,6 +195,8 @@ class Kubernetes(object):
     __interface: str
     __files: Dict[str, str]
     __project_name: str
+    __vxlan_group: ipaddress.ip_address
+    __vni: int
 
     def __init__(self, dockerFilesPath: str = './output', namespace: str = 'seed', interface: str = 'eth0') -> None:
         self.__docker_files_path = dockerFilesPath
@@ -195,6 +204,8 @@ class Kubernetes(object):
         self.__interface = interface
         self.__files = {}
         self.__project_name = os.path.basename(dockerFilesPath)
+        self.__vxlan_group = ipaddress.ip_address("239.1.1.1")
+        self.__vni = 100
         try:
             with open(os.path.join(self.__docker_files_path, 'docker-compose.yml'), 'r') as file:
                 self.__docker_compose_file = yaml.load(
@@ -205,9 +216,15 @@ class Kubernetes(object):
     def parseNetworks(self) -> None:
         for network in self.__docker_compose_file['networks']:
             self.__files[getYamlFileName(network)] = KubernetesCompilerFileTemplates['network'].format(
-                networkName=getCompatibleName(network),
+                networkName=getShortNetworkName(getCompatibleName(network)),
                 namespace=self.__namespace,
-                interface=self.__interface)
+                interface=self.__interface,
+                vni=self.__vni,
+                group=str(self.__vxlan_group),
+                cidr=self.__docker_compose_file['networks'][network]['ipam']['config'][0]['subnet']
+                )
+            self.__vxlan_group += 1
+            self.__vni += 1
 
     def parseServices(self) -> None:
         for service_name in self.__docker_compose_file['services']:
